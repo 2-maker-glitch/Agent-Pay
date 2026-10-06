@@ -21,8 +21,11 @@ const x402 = require('./x402');
 const L = require('../scripts/lib.cjs');
 
 const PORT = Number(process.env.PORT || 9681);
-const DEP = L.readJson(path.join(L.DEPLOY_DIR, '968.json'));
-const facilitator = L.wallet('facilitator', L.TESTNET);
+// Settlement network is a config choice: DEPLOYMENT=968 (testnet, default) or DEPLOYMENT=677 (mainnet).
+const DEPLOYMENT = process.env.DEPLOYMENT || '968';
+const DEP = L.readJson(path.join(L.DEPLOY_DIR, `${DEPLOYMENT}.json`));
+const NET = Number(DEP.chainId) === L.MAINNET.chainId ? L.MAINNET : L.TESTNET;
+const facilitator = L.wallet('facilitator', NET);
 const used = x402.usedStore();
 
 const mainnet = new JsonRpcProvider(L.MAINNET.rpc, L.MAINNET.chainId, { staticNetwork: true });
@@ -186,7 +189,7 @@ function send(res, code, obj, headers = {}) {
 }
 
 let _tn = null;
-const testnetProvider = () => (_tn ??= new JsonRpcProvider(L.TESTNET.rpc, L.TESTNET.chainId, { staticNetwork: true }));
+const testnetProvider = () => (_tn ??= new JsonRpcProvider(NET.rpc, NET.chainId, { staticNetwork: true }));
 
 async function freeRoutes(u, res) {
   if (u.pathname === '/' || u.pathname === '/health') {
@@ -252,7 +255,7 @@ const server = http.createServer(async (req, res) => {
     used.add(p.invoiceId, { resource: req.url, agent: p.agent, amount: p.amount, amountUsdt: formatUnits(p.amount, 6), txHash: settle.txHash, block: settle.blockNumber, at: new Date().toISOString() });
     log(`${route.key} SETTLED ${settle.txHash} ${p.amount} from ${p.agent}`);
 
-    const receipt = { success: true, invoiceId: p.invoiceId, payer: p.agent, payee: p.payee, amount: p.amount, amountUsdt: `${formatUnits(p.amount, 6)} USDT`, network: `eip155:${DEP.chainId}`, transaction: settle.txHash, blockNumber: settle.blockNumber, explorer: `${L.TESTNET.explorer}/tx/${settle.txHash}`, settledAt: new Date().toISOString() };
+    const receipt = { success: true, invoiceId: p.invoiceId, payer: p.agent, payee: p.payee, amount: p.amount, amountUsdt: `${formatUnits(p.amount, 6)} USDT`, network: `eip155:${DEP.chainId}`, transaction: settle.txHash, blockNumber: settle.blockNumber, explorer: `${NET.explorer}/tx/${settle.txHash}`, settledAt: new Date().toISOString() };
     return send(res, 200, { data, payment: receipt }, { 'x-payment-response': x402.encodeHeader(receipt) });
   } catch (e) {
     log(`ERROR ${e.shortMessage || e.message}`);
