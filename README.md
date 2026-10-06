@@ -4,8 +4,9 @@
 an MCP server that gives any AI agent read access to the chain, and an x402 payment rail that lets an
 agent pay per call in USDT — with the agent spending **zero gas**.
 
-> Live: `https://agentpay.104-252-77-136.sslip.io` · settlement on BOT Chain testnet (bohr, `968`),
-> data read from BOT Chain mainnet (`677`).
+> Live: `https://agentpay-rail.netlify.app` (hosted front door; the API it calls runs on the origin box,
+> which holds the settlement key) · origin: `https://agentpay.104-252-77-136.sslip.io`
+> Settlement on BOT Chain testnet (bohr, `968`); data read from BOT Chain mainnet (`677`).
 
 ---
 
