@@ -304,6 +304,15 @@ async function domainSeparator() {
 }
 
 async function freeRoutes(u, res, req) {
+  if (u.pathname.startsWith('/fonts/')) {
+    const name = u.pathname.slice('/fonts/'.length);
+    if (!/^[a-z0-9-]+\.woff2$/.test(name)) return send(res, 404, { error: 'not found' });
+    const file = path.join(L.ROOT, 'public', 'fonts', name);
+    if (!fs.existsSync(file)) return send(res, 404, { error: 'not found' });
+    const buf = fs.readFileSync(file);
+    res.writeHead(200, { 'content-type': 'font/woff2', 'content-length': buf.length, 'cache-control': 'public, max-age=31536000, immutable' });
+    return res.end(buf);
+  }
   if (u.pathname === '/' || u.pathname === '/console') {
     const html = fs.readFileSync(CONSOLE, 'utf8');
     res.writeHead(200, { 'content-type': 'text/html; charset=utf-8', 'content-length': Buffer.byteLength(html), 'cache-control': 'no-store' });
@@ -316,7 +325,8 @@ async function freeRoutes(u, res, req) {
     return send(res, 200, {
       ok: true, service: 'agentpay', x402Version: x402.X402_VERSION,
       network: `eip155:${DEP.chainId}`, vault: DEP.vault, token: DEP.token, payee: DEP.payee,
-      facilitator: facilitator.address, paidRoutes: Object.values(PAID_ROUTES).map((r) => r.key),
+      facilitator: facilitator.address, agent: L.wallet('agent', NET).address,
+      paidRoutes: Object.values(PAID_ROUTES).map((r) => r.key),
       dataSource: 'BOT Chain mainnet (677)', settlement: `BOT Chain testnet (${DEP.chainId})`,
     });
   }
