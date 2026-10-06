@@ -65,9 +65,27 @@ across a 6-hour window. The distinct-wallet count is information the official le
 | payee / facilitator | `0x7b65fA9ae72EeF34d0092209070a81e9dCD49E5a` |
 | EIP-712 domain separator | `0x8d03875ef6dacbddf76841d40370efe2a8b9e773ba49d2353a5137d7fba679cc` |
 
+## Human surface
+
+A reviewer with a browser and no terminal can use the whole thing. Open the root URL and the console
+shows live vault state, the pricing table, and the settlement log — then clicking a paid route runs
+the entire payment flow server-side and renders it as it happens:
+
+```
+1  Request the paid route      GET /v1/votes/508?hours=6
+2  Sign the EIP-712 voucher     no gas, no nonce, no chain write
+3  Facilitator settles         tx 0x649a73c9… → scan.bohr.life
+4  Data returned               live from BOT Chain mainnet
+```
+
+The console signs with the demo agent wallet and pays from its vault balance; a real integration signs
+with its own key — the flow is identical. It is rate-limited to one call per 4 seconds and 120 per hour
+because the vault float is finite.
+
 ## Endpoints
 
-Free: `GET /health`, `GET /v1/pricing`, `GET /v1/vault`, `GET /v1/receipts`
+Free: `GET /` (console), `GET /health`, `GET /v1/pricing`, `GET /v1/vault`, `GET /v1/receipts`,
+`GET /v1/demo/call?route=/v1/chain/stats` (runs the payer flow for the console, 4s cooldown)
 
 Paid (each answers `402` then serves on payment):
 

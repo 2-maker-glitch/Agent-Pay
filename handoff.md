@@ -43,6 +43,12 @@ Keys: `.keys/{facilitator,agent}.json`, mode 600, gitignored. Deployer key is th
 
 - The vote contract and the official bridge only exist on **mainnet 677**; payments settle on **968**.
   That split is deliberate and documented in `README.md`.
+- **Three bugs the browser test caught that curl could not**: the stats strip was blank because `$` is
+  `querySelector` (single element) and the code indexed it like a NodeList; the mobile layout overflowed
+  540px in a 390px viewport because grid/flex children default to `min-content` and the long route path
+  forced the column wide — fixed with `min-width:0`; and two simultaneous settlements collided on the
+  facilitator's nonce (ethers: "replacement fee too low"), now serialised through one queue.
+  Lesson: always render the UI in a real browser and read the DOM back before calling it done.
 - Agent wallet `0xFFBa9023dC8ac5510284d9e3b706986d67c22DDB` holds 5 USDT of vault credit (4.987 after
   the run) and testnet BOT. The vault is **not** drained — top up with `scripts/setup-payer.cjs` if it
   falls below the demo prices.

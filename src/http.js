@@ -188,11 +188,82 @@ function send(res, code, obj, headers = {}) {
   res.end(body);
 }
 
+/**
+ * One facilitator wallet = one nonce stream. Two settlements landing at once
+ * would collide (ethers: "replacement fee too low"), so every settlement is
+ * serialised through this queue. Slow by a second, correct by design.
+ */
+let settleChain = Promise.resolve();
+function serialize(fn) {
+  const next = settleChain.then(fn, fn);
+  settleChain = next.catch(() => {});
+  return next;
+}
+
 let _tn = null;
 const testnetProvider = () => (_tn ??= new JsonRpcProvider(NET.rpc, NET.chainId, { staticNetwork: true }));
 
-async function freeRoutes(u, res) {
-  if (u.pathname === '/' || u.pathname === '/health') {
+// ------------------------------------------------------------- demo console
+const CONSOLE = path.join(L.ROOT, 'public', 'index.html');
+const DEMO_RE = /^\/v1\/(chain\/stats|bridge\/status\?chainId=\d+|address\/0x[a-fA-F0-9]{40}|votes\/\d+(\?hours=\d+)?)$/;
+let demoHits = [];
+
+/**
+ * Runs the whole payer flow server-side so a human can see it in a browser:
+ * request -> 402 -> sign the voucher -> settle -> data. The console signs with the
+ * demo agent wallet; a real integration signs with its own key.
+ */
+async function demoCall(u) {
+  const target = u.searchParams.get('route') || '';
+  if (!DEMO_RE.test(target)) return { error: 'route not allowed for the demo console' };
+  const now = Date.now();
+  demoHits = demoHits.filter((t) => now - t < 3600_000);
+  if (demoHits.length && now - demoHits[demoHits.length - 1] < 4000) return { error: 'one demo call every 4 seconds — the vault float is finite' };
+  if (demoHits.length > 120) return { error: 'demo budget for this hour is spent; run scripts/agent-demo.cjs locally instead' };
+  demoHits.push(now); // recorded up front, so simultaneous clicks are throttled too
+
+  const agent = L.wallet('agent', NET);
+  const self = `http://127.0.0.1:${PORT}`;
+
+  const r1 = await fetch(self + target);
+  if (r1.status !== 402) return { error: `expected 402 from ${target}, got ${r1.status}` };
+  const challenge = await r1.json();
+  const accept = challenge.accepts[0];
+
+  const value = {
+    agent: agent.address, payee: accept.payTo, amount: BigInt(accept.maxAmountRequired),
+    invoiceId: accept.extra.invoiceId, expiry: BigInt(accept.extra.expiry),
+    chainId: BigInt(accept.extra.chainId), vault: accept.extra.vault,
+  };
+  const signature = await agent.signTypedData(x402.domainOf(DEP), x402.VOUCHER_TYPES, value);
+  const header = x402.encodeHeader({
+    x402Version: x402.X402_VERSION, scheme: accept.scheme, network: accept.network,
+    payload: { agent: agent.address, payee: accept.payTo, amount: String(accept.maxAmountRequired), invoiceId: accept.extra.invoiceId, expiry: String(accept.extra.expiry), signature },
+  });
+
+  const r2 = await fetch(self + target, { headers: { 'x-payment': header } });
+  const body = await r2.json();
+  if (r2.status !== 200) return { error: body.error || `payment failed (${r2.status})` };
+  demoHits.push(now);
+
+  return {
+    steps: {
+      challenge: { resource: accept.resource, amountFormatted: accept.amountFormatted, invoiceId: accept.extra.invoiceId, maxTimeoutSeconds: accept.maxTimeoutSeconds },
+      voucher: { agent: agent.address, signature, gasPaidByPayer: 0 },
+    },
+    receipt: body.payment,
+    data: body.data,
+  };
+}
+
+async function freeRoutes(u, res, req) {
+  if (u.pathname === '/' || u.pathname === '/console') {
+    const html = fs.readFileSync(CONSOLE, 'utf8');
+    res.writeHead(200, { 'content-type': 'text/html; charset=utf-8', 'content-length': Buffer.byteLength(html), 'cache-control': 'no-store' });
+    return res.end(html);
+  }
+  if (u.pathname === '/v1/demo/call') return send(res, 200, await demoCall(u));
+  if (u.pathname === '/health' || u.pathname === '/v1/health') {
     return send(res, 200, {
       ok: true, service: 'agentpay', x402Version: x402.X402_VERSION,
       network: `eip155:${DEP.chainId}`, vault: DEP.vault, token: DEP.token, payee: DEP.payee,
@@ -227,7 +298,7 @@ async function freeRoutes(u, res) {
 const server = http.createServer(async (req, res) => {
   const u = new URL(req.url, `http://localhost:${PORT}`);
   try {
-    const free = await freeRoutes(u, res);
+    const free = await freeRoutes(u, res, req);
     if (free !== false) return;
     const route = matchPaid(u, req.method);
     if (!route) return send(res, 404, { error: 'not found' });
@@ -251,7 +322,7 @@ const server = http.createServer(async (req, res) => {
     // Build the answer BEFORE charging: a paid endpoint must never bill for a 500.
     const data = await route.handler(u);
 
-    const settle = await x402.settlePayment(p, DEP, facilitator);
+    const settle = await serialize(() => x402.settlePayment(p, DEP, facilitator));
     used.add(p.invoiceId, { resource: req.url, agent: p.agent, amount: p.amount, amountUsdt: formatUnits(p.amount, 6), txHash: settle.txHash, block: settle.blockNumber, at: new Date().toISOString() });
     log(`${route.key} SETTLED ${settle.txHash} ${p.amount} from ${p.agent}`);
 
