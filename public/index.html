@@ -3,323 +3,458 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>AgentPay — BOT Chain Agent OS</title>
-<meta name="description" content="Live x402 payment rail for BOT Chain: agents pay per call in USDT, spending zero gas.">
+<title>AgentPay — Settlement Slip</title>
+<meta name="description" content="A gasless settlement receipt for BOT Chain: an agent pays per call in USDT and spends no gas.">
+<meta name="theme-color" content="#eef1ec">
 <style>
+  /* ============================================================
+     SETTLEMENT SLIP — locked spec (design war room, 3 brains)
+     palette reconciled against the user's taste reference (talise.io)
+     rule: the accent appears ONLY on settled state, the settled
+     amount, and the live marker. Nothing else is ever coloured.
+     ============================================================ */
   :root{
-    --bg:#0a0b0d; --panel:#101216; --panel2:#141820; --line:#1f242c;
-    --txt:#e9e7e2; --muted:#878e99; --dim:#5d646e;
-    --accent:#ffb02e; --ok:#3ddc97; --warn:#ff7a45; --err:#ff5f56;
-    --mono:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,monospace;
-    --sans:system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    --paper:#eef1ec;      /* page ground            */
+    --paper2:#f4fbef;     /* slip well / raised     */
+    --panel:#f2f4f2;      /* inset wells            */
+    --ink:#0a0e0b;        /* primary type, bar      */
+    --ink2:#121a0f;       /* fine mono labels       */
+    --forest:#1c3d12;     /* emphasis ink           */
+    --muted:#8f978c;      /* labels, leaders, idle  */
+    --line:#d6dbd2;       /* hairlines, perf, rules */
+    --line2:#c3cabf;      /* heavier rules          */
+    --accent:#7fd06e;     /* ONE shot: settled only */
+    --accent-pale:#caffb8;/* single flash only      */
+    --mono:ui-monospace,"SF Mono",SFMono-Regular,Menlo,"Cascadia Mono","Segoe UI Mono",Consolas,"Liberation Mono","DejaVu Sans Mono",monospace;
+    --ease-out:cubic-bezier(.16,1,.3,1);
+    --ease-roll:cubic-bezier(.2,.85,.2,1);
+    --ease-stamp:cubic-bezier(.18,.9,.2,1.15);
   }
   *{box-sizing:border-box;margin:0;padding:0}
   html{-webkit-text-size-adjust:100%}
-  body{background:var(--bg);color:var(--txt);font-family:var(--sans);line-height:1.5;
-    padding:0 16px 64px;max-width:1120px;margin:0 auto;font-size:15px}
-  a{color:var(--accent);text-decoration:none;border-bottom:1px solid rgba(255,176,46,.3)}
+  body{
+    background:var(--paper);color:var(--ink);font-family:var(--mono);
+    font-size:13px;line-height:1.55;-webkit-font-smoothing:antialiased;
+    padding:0 12px 56px;
+    /* faint ruled ground, like ledger paper */
+    background-image:linear-gradient(var(--line) 1px,transparent 1px);
+    background-size:100% 28px;background-position:0 -1px;
+  }
+  a{color:inherit;text-decoration:none;border-bottom:1px solid var(--line2)}
   a:hover{border-bottom-color:var(--accent)}
-  .mono{font-family:var(--mono);font-variant-ligatures:none}
 
-  /* ---------- top bar ---------- */
-  header{display:flex;align-items:center;gap:12px;padding:22px 0 18px;border-bottom:1px solid var(--line);flex-wrap:wrap}
-  .mark{width:30px;height:30px;flex:0 0 30px}
-  .brand{font-size:17px;font-weight:650;letter-spacing:-.2px}
-  .brand small{display:block;font-weight:400;font-size:11.5px;color:var(--muted);letter-spacing:.2px}
-  .chips{display:flex;gap:7px;margin-left:auto;flex-wrap:wrap}
-  .chip{display:inline-flex;align-items:center;gap:6px;font-family:var(--mono);font-size:11px;
-    padding:5px 9px;border:1px solid var(--line);border-radius:999px;color:var(--muted);background:var(--panel)}
-  .dot{width:6px;height:6px;border-radius:50%;background:var(--ok);box-shadow:0 0 0 3px rgba(61,220,151,.13)}
+  /* ---------------- the slip ---------------- */
+  .slip{
+    position:relative;max-width:640px;margin:26px auto 0;
+    background:var(--paper2);
+    box-shadow:0 1px 0 var(--line),0 14px 40px -28px rgba(10,14,11,.5);
+  }
+  /* perforated edges: punched semicircles in paper colour */
+  .slip::before,.slip::after{
+    content:"";position:absolute;top:0;bottom:0;width:8px;
+    background-image:radial-gradient(circle at 0 8px,var(--paper) 0 4.5px,transparent 4.6px);
+    background-size:8px 16px;
+  }
+  .slip::before{left:0}
+  .slip::after{right:0;transform:scaleX(-1)}
+  .pad{padding:0 26px}
+  @media (max-width:520px){.pad{padding:0 18px}}
 
-  /* ---------- lede ---------- */
-  .lede{padding:30px 0 22px;max-width:760px}
-  .lede h1{font-size:clamp(23px,5.2vw,34px);font-weight:680;letter-spacing:-.7px;line-height:1.18}
-  .lede h1 em{font-style:normal;color:var(--accent)}
-  .lede p{color:var(--muted);margin-top:13px;font-size:14.5px}
-  .addr{display:flex;align-items:center;gap:10px;margin-top:18px;flex-wrap:wrap}
-  .addr code{font-family:var(--mono);font-size:11.5px;color:var(--txt);background:var(--panel);
-    border:1px solid var(--line);border-radius:7px;padding:7px 10px;word-break:break-all}
+  /* ---------------- masthead ---------------- */
+  .top{display:flex;align-items:baseline;gap:10px;padding:20px 0 4px}
+  .mark{font-size:22px;font-weight:700;letter-spacing:-.02em}
+  .mark span{color:var(--muted);font-weight:400}
+  .top .spacer{flex:1}
+  .pip{display:inline-flex;align-items:center;gap:6px;font-size:9.5px;letter-spacing:.14em;
+       text-transform:uppercase;color:var(--muted)}
+  .pip i{width:6px;height:6px;background:var(--accent);border-radius:50%;display:block;
+         animation:breathe 2.6s ease-in-out infinite}
+  @keyframes breathe{0%,100%{opacity:1}50%{opacity:.28}}
+  .sub{padding:0 0 14px;font-size:9.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--muted)}
+  .rule{height:1px;background:var(--line2)}
+  .rule.thin{background:var(--line)}
+  .rule.dbl{height:3px;background:var(--line2);border-top:1px solid var(--line2);border-bottom:1px solid var(--line2)}
 
-  /* ---------- stats ---------- */
-  .stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(132px,1fr));gap:1px;
-    background:var(--line);border:1px solid var(--line);border-radius:12px;overflow:hidden;margin:8px 0 34px}
-  .stat{background:var(--panel);padding:14px 15px}
-  .stat b{display:block;font-family:var(--mono);font-size:20px;font-weight:600;letter-spacing:-.5px}
-  .stat span{display:block;font-size:11px;color:var(--dim);text-transform:uppercase;letter-spacing:.7px;margin-top:3px}
-  .stat.ok b{color:var(--ok)}
+  /* ---------------- the book (vault totals) ---------------- */
+  .book{padding:16px 0 14px}
+  .book h2,.sec h2{font-size:9.5px;letter-spacing:.2em;text-transform:uppercase;color:var(--muted);
+    font-weight:400;margin-bottom:10px}
+  .row{display:flex;align-items:baseline;gap:8px;padding:5px 0}
+  .row .lbl{font-size:9.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);white-space:nowrap}
+  .row .lead{flex:1;height:1px;margin-bottom:4px;
+    background-image:repeating-linear-gradient(to right,var(--line2) 0 1.5px,transparent 1.5px 5.5px)}
+  .row .val{font-variant-numeric:tabular-nums;font-weight:600;letter-spacing:-.01em}
+  .total .val{font-size:40px;line-height:1.05}
+  .total .lbl{font-size:10px;letter-spacing:.18em}
+  .book .figs{padding:10px 0 2px}
+  .book .figs .row{padding:3px 0}
+  .book .figs .val{font-size:15px}
+  @media (max-width:520px){.total .val{font-size:32px}}
 
-  h2{font-size:12px;text-transform:uppercase;letter-spacing:1.4px;color:var(--dim);font-weight:600;margin-bottom:13px}
-  .cols{display:grid;grid-template-columns:1.35fr .95fr;gap:26px}
-  /* grid and flex children default to min-content sizing, which is what makes a
-     long route path push the whole page wider than the phone screen */
-  .cols>*{min-width:0}
-  @media (max-width:880px){.cols{grid-template-columns:1fr;gap:30px}}
+  /* ---------------- routes ---------------- */
+  .sec{padding:16px 0}
+  .route{display:block;width:100%;text-align:left;background:none;border:0;font:inherit;color:inherit;
+    cursor:pointer;padding:11px 0;min-height:44px}
+  .route .rl{display:flex;align-items:baseline;gap:8px}
+  .route .p{font-size:12.5px;letter-spacing:-.01em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .route .d{font-size:9.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-top:2px}
+  .route .lead{flex:1;height:1px;margin-bottom:4px;min-width:18px;
+    background-image:repeating-linear-gradient(to right,var(--line2) 0 1.5px,transparent 1.5px 5.5px)}
+  .route .amt{font-size:12.5px;font-variant-numeric:tabular-nums;white-space:nowrap}
+  .route .go{font-size:9.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);
+    border:1px solid var(--line2);padding:3px 7px;white-space:nowrap}
+  .route:hover .go{border-color:var(--ink);color:var(--ink)}
+  .route:hover .p{color:var(--forest)}
+  .route:disabled{cursor:default;opacity:.45}
+  .route+.route{border-top:1px solid var(--line)}
 
-  .card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:16px;min-width:0}
+  /* ---------------- the print area ---------------- */
+  .print{display:none;padding:16px 0 6px}
+  .print.on{display:block}
+  .pline{display:flex;gap:8px;font-size:11.5px;padding:3px 0;opacity:0;
+    transform:translateY(-6px);transition:opacity .22s var(--ease-out),transform .22s var(--ease-out)}
+  .pline.in{opacity:1;transform:none}
+  .pline .k{color:var(--muted);min-width:74px;font-size:9.5px;letter-spacing:.14em;text-transform:uppercase;
+    padding-top:2px}
+  .pline .v{flex:1;word-break:break-all}
+  .pline.dim .v{color:var(--muted)}
+  .well{background:var(--panel);border:1px solid var(--line);padding:9px 10px;
+    font-size:11px;white-space:pre-wrap;word-break:break-all;max-height:230px;overflow:auto;color:var(--ink2)}
 
-  /* ---------- console ---------- */
-  .routes{display:flex;flex-direction:column;gap:8px;margin-bottom:14px}
-  .route{display:flex;align-items:center;gap:12px;width:100%;text-align:left;cursor:pointer;min-width:0;
-    background:var(--panel2);border:1px solid var(--line);border-radius:9px;padding:12px 13px;color:var(--txt);
-    font:inherit;transition:border-color .15s,background .15s}
-  .route:hover{border-color:#2c333d}
-  .route:disabled{opacity:.5;cursor:default}
-  .route .path{font-family:var(--mono);font-size:12.5px;flex:1;min-width:0;word-break:break-all}
-  .route .path i{color:var(--dim);font-style:normal}
-  .price{font-family:var(--mono);font-size:12px;color:var(--accent);white-space:nowrap}
-  .route svg{width:15px;height:15px;flex:0 0 15px;color:var(--dim)}
+  /* knockout bar: the proof line, tx hash knocked out of ink */
+  .ko{position:relative;margin:12px 0 0;background:var(--ink);color:var(--paper2);
+    padding:9px 11px;font-size:11.5px;letter-spacing:.01em;
+    clip-path:inset(0 100% 0 0);transition:clip-path .24s var(--ease-out)}
+  .ko.in{clip-path:inset(0 0 0 0)}
+  .ko .h{word-break:break-all}
+  .ko a{color:var(--paper2);border-bottom-color:rgba(244,251,239,.35)}
+  .ko .tag{font-size:9.5px;letter-spacing:.16em;text-transform:uppercase;opacity:.6;display:block;margin-bottom:2px}
 
-  #flow{border-top:1px solid var(--line);margin-top:14px;padding-top:14px;display:none}
-  #flow.on{display:block}
-  .step{display:flex;gap:11px;padding:9px 0;border-bottom:1px dashed rgba(255,255,255,.055);font-size:13.5px}
-  .step:last-child{border-bottom:0}
-  .step .n{width:19px;height:19px;flex:0 0 19px;border-radius:50%;border:1px solid var(--line);
-    display:grid;place-items:center;font-family:var(--mono);font-size:10.5px;color:var(--muted);margin-top:1px}
-  .step.done .n{border-color:rgba(61,220,151,.5);color:var(--ok)}
-  .step.fail .n{border-color:rgba(255,95,86,.5);color:var(--err)}
-  .step .body{flex:1;min-width:0}
-  .step .t{font-weight:520}
-  .step .d{color:var(--muted);font-size:12.5px;margin-top:2px}
-  .step code,.step pre{font-family:var(--mono);font-size:11.5px}
-  .step pre{background:#0c0e12;border:1px solid var(--line);border-radius:7px;padding:9px 10px;
-    margin-top:7px;overflow-x:auto;color:#b9c0cc;max-height:190px}
-  .pill{display:inline-block;font-family:var(--mono);font-size:10.5px;padding:1px 6px;border-radius:5px;
-    background:rgba(255,176,46,.12);color:var(--accent);border:1px solid rgba(255,176,46,.25)}
-  .pill.g{background:rgba(61,220,151,.12);color:var(--ok);border-color:rgba(61,220,151,.25)}
+  /* stamp: the settled mark */
+  .stamped{position:relative;padding-top:14px}
+  .stamp{display:inline-block;border:2px solid var(--accent);color:var(--accent);
+    padding:5px 10px 4px;font-size:11px;font-weight:700;letter-spacing:.22em;text-transform:uppercase;
+    transform:rotate(-7deg) scale(1.35);opacity:0;
+    transition:transform .2s var(--ease-stamp),opacity .12s ease-out;
+    box-shadow:inset 0 0 0 3px var(--paper2),inset 0 0 0 4px var(--accent)}
+  .stamp.in{transform:rotate(-7deg) scale(1);opacity:1}
+  .shake{animation:shake .04s steps(2) 2}
+  @keyframes shake{0%{transform:translateX(1.5px)}100%{transform:translateX(-1.5px)}}
+  .paid{font-size:26px;font-weight:700;color:var(--accent);font-variant-numeric:tabular-nums;
+    opacity:0;transform:translateY(4px);transition:opacity .16s ease-out,transform .16s var(--ease-out)}
+  .paid.in{opacity:1;transform:none}
+  .stamped .meta{font-size:9.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin-top:6px}
 
-  /* ---------- receipts ---------- */
-  .receipt{display:flex;align-items:baseline;gap:10px;padding:10px 0;border-bottom:1px solid var(--line);font-size:13px}
-  .receipt:last-child{border-bottom:0}
-  .receipt .amt{font-family:var(--mono);color:var(--ok);white-space:nowrap}
-  .receipt .res{flex:1;min-width:0;color:var(--muted);font-family:var(--mono);font-size:11.5px;
-    overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-  .receipt time{font-family:var(--mono);font-size:10.5px;color:var(--dim);white-space:nowrap}
+  /* ---------------- the wire ---------------- */
+  .wire .w{display:flex;align-items:baseline;gap:8px;padding:7px 0;font-size:11.5px;
+    border-top:1px solid var(--line)}
+  .wire .w:first-of-type{border-top:0}
+  .wire .a{color:var(--accent);font-variant-numeric:tabular-nums;min-width:52px}
+  .wire .r{flex:1;min-width:0;color:var(--ink2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .wire .t{color:var(--muted);font-size:10px;white-space:nowrap}
+  .empty{color:var(--muted);font-size:11.5px;padding:6px 0}
 
-  /* ---------- pricing + integrate ---------- */
-  table{width:100%;border-collapse:collapse;font-size:13px}
-  th{text-align:left;font-size:10.5px;text-transform:uppercase;letter-spacing:.9px;color:var(--dim);
-    font-weight:600;padding:0 0 8px}
-  td{padding:9px 0;border-top:1px solid var(--line);vertical-align:top}
-  td.p{font-family:var(--mono);color:var(--accent);text-align:right;white-space:nowrap}
-  td.r{font-family:var(--mono);font-size:12px}
-  .sect{margin-top:34px}
-  pre.snip{background:#0c0e12;border:1px solid var(--line);border-radius:9px;padding:13px;
-    font-family:var(--mono);font-size:11.5px;color:#b9c0cc;overflow-x:auto;line-height:1.65}
-  footer{margin-top:44px;padding-top:18px;border-top:1px solid var(--line);color:var(--dim);font-size:11.5px;
-    display:flex;justify-content:space-between;gap:14px;flex-wrap:wrap}
+  /* ---------------- fine print ---------------- */
+  .fine{padding:16px 0 6px;font-size:10px;line-height:1.7;color:var(--muted)}
+  .fine b{color:var(--ink2);font-weight:600}
+  .fine .kv{display:flex;gap:8px;padding:2px 0}
+  .fine .kv span:first-child{min-width:82px;letter-spacing:.1em;text-transform:uppercase;font-size:9.5px}
+  .fine .kv span:last-child{color:var(--ink2);word-break:break-all}
+  .fine pre{background:var(--panel);border:1px solid var(--line);padding:8px 9px;margin-top:7px;
+    font-family:var(--mono);font-size:10px;color:var(--ink2);overflow-x:auto;line-height:1.6}
+  .barcode{display:flex;gap:2px;align-items:flex-end;height:26px;margin:14px 0 2px}
+  .barcode i{display:block;width:2px;background:var(--ink);height:100%}
+  .barcode i:nth-child(2n){width:1px;height:78%}
+  .barcode i:nth-child(3n){width:3px;height:88%}
+  .pull{font-size:9.5px;letter-spacing:.2em;text-transform:uppercase;color:var(--muted);
+    text-align:center;padding:10px 0 16px}
+
+  /* digit roll */
+  .roll{display:inline-block;overflow:hidden;height:1em;vertical-align:baseline}
+  .roll .st{display:block;transition:transform .18s var(--ease-roll)}
+  .roll .st i{display:block;height:1em;line-height:1em;font-style:normal}
+
+  @media (prefers-reduced-motion:reduce){
+    *,*::before,*::after{transition-duration:.001s!important;animation-duration:.001s!important}
+    .ko{clip-path:none}
+    .stamp{transform:rotate(-7deg);opacity:1}
+    .paid,.pline{opacity:1;transform:none}
+    .pip i{animation:none}
+  }
 </style>
 </head>
 <body>
-<header>
-  <svg class="mark" viewBox="0 0 32 32" fill="none" aria-hidden="true">
-    <rect x="1" y="1" width="30" height="30" rx="8" stroke="#2a3038" stroke-width="1.5"/>
-    <path d="M10 20.5V11.5h6.2a3.1 3.1 0 0 1 0 6.2H10" stroke="#ffb02e" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-    <circle cx="22.5" cy="20.5" r="2.4" stroke="#3ddc97" stroke-width="1.6"/>
-  </svg>
-  <div class="brand">AgentPay<small>BOT Chain Agent OS — module 02</small></div>
-  <div class="chips">
-    <span class="chip"><span class="dot"></span>live</span>
-    <span class="chip">settlement · eip155:968</span>
-    <span class="chip">data · mainnet 677</span>
-  </div>
-</header>
+<div class="slip">
+  <div class="pad">
 
-<section class="lede">
-  <h1>An agent pays per call in USDT and <em>spends no gas at all</em>.</h1>
-  <p>Standard x402 needs EIP-3009, which BOT Chain's USDT doesn't have — so this settles with x402's
-     <b>batch-settlement</b> scheme: prepaid vault, off-chain EIP-712 vouchers signed by the payer, and a
-     permissionless <code class="mono">settle()</code> that batches them. The payer's key signs; the server pays the gas.</p>
-  <div class="addr">
-    <span class="chip">vault</span>
-    <code id="vaultAddr">…</code>
-    <a id="vaultLink" href="#" target="_blank" rel="noopener">open on explorer</a>
-  </div>
-</section>
-
-<section class="stats" id="stats">
-  <div class="stat ok"><b>–</b><span>settlements</span></div>
-  <div class="stat"><b>–</b><span>USDT settled</span></div>
-  <div class="stat"><b>–</b><span>held in vault</span></div>
-  <div class="stat"><b>–</b><span>payee earned</span></div>
-  <div class="stat"><b>–</b><span>facilitator gas</span></div>
-</section>
-
-<div class="cols">
-  <div>
-    <h2>Make a paid call — watch it settle</h2>
-    <div class="card">
-      <div class="routes" id="routes"></div>
-      <p style="color:var(--dim);font-size:11.5px;margin-top:2px">
-        The console signs with the demo agent wallet and pays from its vault balance.
-        A real integration signs with its own key — the flow is identical.
-      </p>
-      <div id="flow"></div>
+    <div class="top">
+      <div class="mark">AGENTPAY</div>
+      <div class="spacer"></div>
+      <div class="pip"><i></i>live</div>
     </div>
-  </div>
+    <div class="sub">BOT Chain Agent OS · module 02 · settlement slip</div>
+    <div class="rule dbl"></div>
 
-  <div>
-    <h2>Live settlements</h2>
-    <div class="card" id="receipts"><p style="color:var(--dim);font-size:12.5px">loading…</p></div>
+    <!-- ============ THE BOOK ============ -->
+    <section class="book">
+      <h2>Vault</h2>
+      <div class="row total">
+        <span class="lbl">USDT settled</span>
+        <span class="lead"></span>
+        <span class="val" id="vSettled">–</span>
+      </div>
+      <div class="figs">
+        <div class="row"><span class="lbl">Settlements</span><span class="lead"></span><span class="val" id="vCount">–</span></div>
+        <div class="row"><span class="lbl">Held in vault</span><span class="lead"></span><span class="val" id="vHeld">–</span></div>
+        <div class="row"><span class="lbl">Payee earned</span><span class="lead"></span><span class="val" id="vPayee">–</span></div>
+        <div class="row"><span class="lbl">Facilitator gas</span><span class="lead"></span><span class="val" id="vGas">–</span></div>
+      </div>
+    </section>
+
+    <div class="rule"></div>
+
+    <!-- ============ ROUTES ============ -->
+    <section class="sec">
+      <h2>Paid routes · tap to settle one</h2>
+      <div id="routes"></div>
+    </section>
+
+    <div class="rule"></div>
+
+    <!-- ============ THE PRINT AREA ============ -->
+    <section class="print" id="print">
+      <h2 style="font-size:9.5px;letter-spacing:.2em;text-transform:uppercase;color:var(--muted);margin-bottom:8px">Slip</h2>
+      <div id="lines"></div>
+      <div class="ko" id="ko"><span class="tag">settled · on chain</span><span class="h" id="koHash"></span></div>
+      <div class="stamped" id="stamped" style="display:none">
+        <div class="stamp" id="stamp">settled</div>
+        <div style="margin-top:10px"><span class="paid" id="paid"></span></div>
+        <div class="meta" id="paidMeta"></div>
+      </div>
+    </section>
+
+    <div class="rule thin"></div>
+
+    <!-- ============ THE WIRE ============ -->
+    <section class="sec wire">
+      <h2>Wire · recent settlements</h2>
+      <div id="wire"><div class="empty">reading the log…</div></div>
+    </section>
+
+    <div class="rule dbl"></div>
+
+    <!-- ============ FINE PRINT ============ -->
+    <section class="fine">
+      <div class="kv"><span>Vault</span><span id="fVault">–</span></div>
+      <div class="kv"><span>Payee</span><span id="fPayee">–</span></div>
+      <div class="kv"><span>Domain</span><span id="fDomain">–</span></div>
+      <div class="kv"><span>Settlement</span><span>BOT Chain testnet · eip155:968</span></div>
+      <div class="kv"><span>Data source</span><span>BOT Chain mainnet · 677</span></div>
+      <div class="kv"><span>MCP</span><span>hermes mcp add botchain --command node --args /root/botchain-mcp/src/index.js</span></div>
+      <p style="margin-top:10px">
+        <b>Why vouchers instead of x402-exact:</b> the standard scheme needs EIP-3009, which BOT Chain's
+        USDT does not implement — verified by scanning the deployed bytecode, not read from docs. So the
+        payer signs an EIP-712 voucher off-chain and the facilitator settles it, paying the gas itself.
+        <b>The agent spends nothing but the price.</b>
+      </p>
+      <div class="barcode" id="barcode" aria-hidden="true"></div>
+      <div class="pull">— tear here —</div>
+    </section>
+
   </div>
 </div>
 
-<section class="sect">
-  <h2>Pricing</h2>
-  <div class="card">
-    <table>
-      <thead><tr><th>Route</th><th>Data</th><th style="text-align:right">Price</th></tr></thead>
-      <tbody id="pricing"><tr><td colspan="3" style="color:var(--dim)">loading…</td></tr></tbody>
-    </table>
-  </div>
-</section>
-
-<section class="sect">
-  <h2>Wire it into an agent</h2>
-  <div class="card">
-    <p style="color:var(--muted);font-size:13.5px;margin-bottom:12px">Module 01 is an MCP server, so any MCP-capable agent gets chain read access with no integration code:</p>
-    <pre class="snip">claude mcp add botchain -- node /root/botchain-mcp/src/index.js
-hermes mcp add botchain --command node --args /root/botchain-mcp/src/index.js</pre>
-    <p style="color:var(--muted);font-size:13.5px;margin:16px 0 12px">Module 02 needs no SDK. Hit a paid route, meet the 402, sign the voucher, re-send it:</p>
-    <pre class="snip">GET /v1/votes/508?hours=6          ->  402 { accepts:[{ maxAmountRequired:"10000", extra:{ invoiceId, expiry } }] }
-sign EIP-712 Voucher                ->  { agent, payee, amount, invoiceId, expiry, chainId, vault }
-GET /v1/votes/508  X-PAYMENT: &lt;base64&gt;  ->  200 { data, payment:{ transaction, explorer } }</pre>
-  </div>
-</section>
-
-<footer>
-  <span>BOT Chain Agent OS modules 01 + 02 · first working implementation of the chain's published spec</span>
-  <span class="mono" id="foot"></span>
-</footer>
-
 <script>
 const $ = (s) => document.querySelector(s);
-const short = (h, n = 10) => h ? h.slice(0, n) + '…' + h.slice(-6) : '';
+const $$ = (s) => Array.from(document.querySelectorAll(s));
+const REDUCED = matchMedia('(prefers-reduced-motion: reduce)').matches;
+const pad = (n, w) => String(n).padStart(w, '0');
 
-let ROUTES = [];
+/* ---------- mechanical digit roll: only changed digits move ---------- */
+function rollInto(el, next, { stagger = 25 } = {}) {
+  const prev = el.dataset.v ?? '';
+  if (prev === next) return;
+  el.dataset.v = next;
 
-function chip(txt, cls) { return `<span class="pill ${cls || ''}">${txt}</span>`; }
+  if (REDUCED || prev === '' || prev.length !== next.length) { el.textContent = next; return; }
 
-function esc(s) { return String(s).replace(/[&<>]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c])); }
-
-async function loadHealth() {
-  const h = await (await fetch('/health')).json();
-  $('#vaultAddr').textContent = h.vault;
-  $('#vaultLink').href = `https://scan.bohr.life/address/${h.vault}`;
-  $('#foot').textContent = `facilitator ${short(h.facilitator)}`;
+  const frag = document.createDocumentFragment();
+  let moved = 0;
+  for (let i = 0; i < next.length; i++) {
+    const ch = next[i];
+    if (ch === prev[i]) { frag.append(document.createTextNode(ch)); continue; }
+    const cell = document.createElement('span');
+    cell.className = 'roll';
+    const st = document.createElement('span');
+    st.className = 'st';
+    const a = document.createElement('i'); a.textContent = prev[i];
+    const b = document.createElement('i'); b.textContent = ch;
+    st.append(a, b); cell.append(st); frag.append(cell);
+    const delay = moved++ * stagger;
+    setTimeout(() => { st.style.transform = 'translateY(-1em)'; }, delay);
+    setTimeout(() => { cell.replaceWith(document.createTextNode(ch)); }, 220 + delay);
+  }
+  el.replaceChildren(frag);
 }
 
-async function loadStats() {
+/* ---------- the wire ---------- */
+async function loadVault() {
   try {
     const v = await (await fetch('/v1/vault')).json();
-    const cells = document.querySelectorAll('#stats .stat b');
-    cells[0].textContent = v.settleCount;
-    cells[1].textContent = v.totalSettledUsdt;
-    cells[2].textContent = v.heldInVaultUsdt;
-    cells[3].textContent = v.payeeEarnedUsdt;
-    cells[4].textContent = Number(v.facilitatorGasBot).toFixed(3);
+    rollInto($('#vSettled'), v.totalSettledUsdt);
+    rollInto($('#vCount'), pad(v.settleCount, 3));
+    rollInto($('#vHeld'), v.heldInVaultUsdt);
+    rollInto($('#vPayee'), v.payeeEarnedUsdt);
+    rollInto($('#vGas'), Number(v.facilitatorGasBot).toFixed(3));
   } catch (e) { /* transient */ }
 }
 
-async function loadPricing() {
-  const p = await (await fetch('/v1/pricing')).json();
-  ROUTES = p.routes.filter((r) => !/bridge/.test(r.route));
-  $('#pricing').innerHTML = p.routes.map((r) => {
-    const label = r.route.replace('GET ', '');
-    return `<tr><td class="r">${esc(label.replace('/v1/', ''))}</td><td style="color:var(--muted);font-size:12.5px">${desc(label)}</td><td class="p">${r.price}</td></tr>`;
-  }).join('');
-  $('#routes').innerHTML = ROUTES.map((r, i) => {
-    const label = r.route.replace('GET ', '');
-    const arg = label.startsWith('/v1/votes') ? '/508?hours=6' : label.startsWith('/v1/address') ? '/0xfad8473C54c058b58DF32caDf6415FBA15639682' : '';
-    return `<button class="route" data-i="${i}" data-path="${esc(label + arg)}">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round">
-        <path d="M5 12h13M13 7l5 5-5 5"/></svg>
-      <span class="path">${esc(label)}<i>${esc(arg)}</i></span>
-      <span class="price">${r.price}</span></button>`;
-  }).join('');
-  $('#routes').querySelectorAll('.route').forEach((b) => b.addEventListener('click', () => runCall(b)));
-}
-
-function desc(label) {
-  if (label.includes('chain/stats')) return 'mainnet head block + gas price';
-  if (label.includes('address')) return 'BOT + USDT balance, nonce, contract?';
-  if (label.includes('votes')) return 'on-chain votes and distinct wallets';
-  if (label.includes('bridge')) return 'official bridge pause, min/max, liquidity';
-  return '';
-}
-
-function step(n, title, detail, state) {
-  const el = document.createElement('div');
-  el.className = 'step' + (state ? ' ' + state : '');
-  el.innerHTML = `<span class="n">${state === 'done' ? '✓' : state === 'fail' ? '✕' : n}</span>
-    <span class="body"><span class="t">${title}</span>${detail ? `<span class="d">${detail}</span>` : ''}</span>`;
-  return el;
-}
-
-async function loadReceipts() {
+async function loadWire() {
   const r = await (await fetch('/v1/receipts')).json();
-  const rows = Object.entries(r.receipts).reverse().slice(0, 9);
-  if (!rows.length) return $('#receipts').innerHTML = '<p style="color:var(--dim);font-size:12.5px">no settlements yet</p>';
-  $('#receipts').innerHTML = rows.map(([inv, x]) => `<div class="receipt">
-      <span class="amt">${x.amountUsdt}</span>
-      <span class="res">${esc(x.resource)}</span>
-      <a href="https://scan.bohr.life/tx/${x.txHash}" target="_blank" rel="noopener" class="mono" style="font-size:11px">tx ↗</a>
-      <time>${new Date(x.at).toISOString().slice(11, 19)}</time>
+  const rows = Object.entries(r.receipts).reverse().slice(0, 8);
+  if (!rows.length) { $('#wire').innerHTML = '<div class="empty">no settlements yet</div>'; return; }
+  $('#wire').innerHTML = rows.map(([inv, x]) => `
+    <div class="w">
+      <span class="a">${x.amountUsdt}</span>
+      <span class="r"><a href="https://scan.bohr.life/tx/${x.txHash}" target="_blank" rel="noopener">${x.resource}</a></span>
+      <span class="t">${new Date(x.at).toISOString().slice(11, 19)}</span>
     </div>`).join('');
 }
 
+async function loadFine() {
+  const h = await (await fetch('/health')).json();
+  $('#fVault').textContent = h.vault;
+  $('#fPayee').textContent = h.payee;
+  const d = await (await fetch('/v1/demo/domain')).json().catch(() => ({ domainSeparator: '–' }));
+  $('#fDomain').textContent = d.domainSeparator;
+}
+
+/* ---------- routes ---------- */
+const DESCS = {
+  'chain/stats': 'mainnet head block, gas price',
+  'address': 'BOT + USDT balance, nonce, contract?',
+  'votes': 'on-chain votes and distinct wallets',
+  'bridge/status': 'official bridge pause, min/max, liquidity',
+};
+function descOf(p) {
+  const k = Object.keys(DESCS).find((k) => p.includes(k));
+  return k ? DESCS[k] : '';
+}
+let ROUTES = [];
+async function loadRoutes() {
+  const p = await (await fetch('/v1/pricing')).json();
+  ROUTES = p.routes.map((r) => {
+    const path = r.route.replace('GET ', '');
+    const arg = path.startsWith('/v1/votes') ? '/508?hours=6'
+      : path.startsWith('/v1/address') ? '/0xfad8473C54c058b58DF32caDf6415FBa15639682'
+      : path.startsWith('/v1/bridge') ? '?chainId=1' : '';
+    return { path: path + arg, price: r.price, data: descOf(path) };
+  });
+  $('#routes').innerHTML = ROUTES.map((r, i) => `
+    <button class="route" data-i="${i}">
+      <span class="rl">
+        <span class="p">${r.path}</span>
+        <span class="lead"></span>
+        <span class="amt">${r.price}</span>
+      </span>
+      <span class="d">${r.data} <span style="color:var(--line2)">·</span> <span class="go">settle</span></span>
+    </button>`).join('');
+  $$('#routes .route').forEach((b) => b.addEventListener('click', () => runCall(b)));
+}
+
+/* ---------- print one line ---------- */
+function line(k, v, { dim = false } = {}) {
+  const el = document.createElement('div');
+  el.className = 'pline' + (dim ? ' dim' : '');
+  el.innerHTML = `<span class="k">${k}</span><span class="v"></span>`;
+  el.querySelector('.v').textContent = v;
+  $('#lines').append(el);
+  requestAnimationFrame(() => el.classList.add('in'));
+  return el;
+}
+
+/* ---------- the paid call: the real protocol, driven from here ---------- */
 async function runCall(btn) {
-  const path = btn.dataset.path;
-  document.querySelectorAll('.route').forEach((b) => (b.disabled = true));
-  const flow = $('#flow');
-  flow.className = 'on';
-  flow.innerHTML = '';
-  const s1 = step(1, 'Request the paid route', `<code>GET ${esc(path)}</code>`);
-  flow.append(s1);
+  const r = ROUTES[btn.dataset.i];
+  const print = $('#print');
+  print.classList.add('on');
+  $('#lines').innerHTML = '';
+  $('#stamped').style.display = 'none';
+  $('#ko').classList.remove('in');
+  $('#koHash').textContent = '';
+  $('#stamp').classList.remove('in');
+  $('#paid').classList.remove('in');
+  $$('#routes .route').forEach((b) => (b.disabled = true));
+
   try {
-    const res = await (await fetch(`/v1/demo/call?route=${encodeURIComponent(path)}`)).json();
-    if (res.error) { s1.className = 'step fail'; s1.append(Object.assign(document.createElement('div'), { className: 'd', textContent: res.error })); return; }
+    // 1 — the request meets the paywall
+    const t0 = performance.now();
+    const r1 = await fetch(r.path);
+    const ch = await r1.json();
+    if (r1.status !== 402) throw new Error(`expected 402, got ${r1.status}`);
+    const a = ch.accepts[0];
+    line('request', `GET ${r.path}`, { dim: true });
+    line('402', `${a.amountFormatted} required · invoice ${a.extra.invoiceId} · expires ${a.maxTimeoutSeconds}s`);
 
-    s1.className = 'step done';
-    const ch = res.steps.challenge;
-    s1.append(Object.assign(document.createElement('div'), {
-      className: 'd',
-      innerHTML: `402 payment required · ${chip(ch.amountFormatted)} · invoice <code>${short(ch.invoiceId)}</code> · expires in ${ch.maxTimeoutSeconds}s`,
+    // 2 — sign the voucher off-chain (no gas, no nonce, no chain write)
+    const sg = await (await fetch(`/v1/demo/sign?route=${encodeURIComponent(r.path)}` +
+      `&invoiceId=${a.extra.invoiceId}&expiry=${a.extra.expiry}`)).json();
+    if (sg.error) throw new Error(sg.error);
+    line('signed', `EIP-712 voucher · agent ${sg.agent} · gas spent 0`);
+
+    // 3 — re-send with the payment attached; the facilitator settles on chain
+    const header = btoa(JSON.stringify({
+      x402Version: 2, scheme: a.scheme, network: a.network,
+      payload: { agent: sg.agent, payee: sg.payee, amount: sg.amount, invoiceId: sg.invoiceId, expiry: sg.expiry, signature: sg.signature },
     }));
+    const r2 = await fetch(r.path, { headers: { 'x-payment': header } });
+    const body = await r2.json();
+    if (r2.status !== 200) throw new Error(body.error || `settlement failed (${r2.status})`);
+    const ms = Math.round(performance.now() - t0);
 
-    const s2 = step(2, 'Sign the EIP-712 voucher', 'no gas, no nonce, no chain write');
-    s2.className = 'step done';
-    s2.append(Object.assign(document.createElement('div'), {
-      className: 'd',
-      innerHTML: `signer <code>${short(res.steps.voucher.agent)}</code> · signature <code>${short(res.steps.voucher.signature, 18)}</code>`,
-    }));
-    flow.append(s2);
+    // 4 — THE MOMENT: the proof line, then the stamp
+    const rc = body.payment;
+    $('#koHash').innerHTML =
+      `tx <a href="${rc.explorer}" target="_blank" rel="noopener">${rc.transaction}</a> · block ${rc.blockNumber} · settled in ${ms}ms`;
+    requestAnimationFrame(() => $('#ko').classList.add('in'));
 
-    const s3 = step(3, 'Facilitator settles on BOT Chain', res.receipt.explorer);
-    s3.className = 'step done';
-    s3.append(Object.assign(document.createElement('div'), {
-      className: 'd',
-      innerHTML: `tx <a href="${res.receipt.explorer}" target="_blank" rel="noopener" class="mono">${short(res.receipt.transaction, 20)}</a> · block ${res.receipt.blockNumber} · served to the agent in the same response`,
-    }));
-    flow.append(s3);
+    setTimeout(() => {
+      $('#stamped').style.display = 'block';
+      $('#stamp').classList.add('in');
+      const el = $('#stamp');
+      el.classList.remove('shake'); void el.offsetWidth; el.classList.add('shake');
+      $('#paid').textContent = rc.amountUsdt;
+      $('#paid').classList.add('in');
+      $('#paidMeta').textContent = `payer ${rc.payer} → payee ${rc.payee} · ${rc.network}`;
+      setTimeout(() => el.classList.remove('shake'), 120);
+    }, 150);
 
-    const s4 = step(4, 'Data returned', 'live from BOT Chain mainnet');
-    s4.className = 'step done';
-    const pre = document.createElement('pre');
-    pre.textContent = JSON.stringify(res.data, null, 1);
-    s4.append(pre);
-    flow.append(s4);
+    line('data', '', { dim: true }).querySelector('.v').outerHTML = '<span class="v"><span class="well"></span></span>';
+    $('#lines').lastChild.querySelector('.well').textContent = JSON.stringify(body.data, null, 1);
 
-    loadStats(); loadReceipts();
+    loadVault(); loadWire();
   } catch (e) {
-    s1.className = 'step fail';
-    s1.append(Object.assign(document.createElement('div'), { className: 'd', textContent: String(e) }));
+    line('error', String(e.message || e));
+    $('#stamp').classList.remove('in');
   } finally {
-    document.querySelectorAll('.route').forEach((b) => (b.disabled = false));
+    $$('#routes .route').forEach((b) => (b.disabled = false));
   }
 }
 
-loadHealth(); loadStats(); loadPricing(); loadReceipts();
-setInterval(loadStats, 6000);
+/* barcode: derive from the vault address so it isn't decorative fiction */
+function barcode(seed) {
+  const el = $('#barcode');
+  const bits = seed.replace(/^0x/, '').split('').map((c) => parseInt(c, 16).toString(2).padStart(4, '0')).join('');
+  let html = '';
+  for (let i = 0; i < 96; i++) html += `<i style="height:${60 + (bits[i % bits.length] === '1' ? 40 : 12)}%"></i>`;
+  el.innerHTML = html;
+}
+
+loadVault(); loadWire(); loadRoutes();
+fetch('/health').then((r) => r.json()).then((h) => { $('#fVault').textContent = h.vault; $('#fPayee').textContent = h.payee; barcode(h.vault); });
+fetch('/v1/demo/domain').then((r) => r.json()).then((d) => { $('#fDomain').textContent = d.domainSeparator; }).catch(() => {});
+setInterval(loadVault, 5000);
+setInterval(loadWire, 15000);
 </script>
 </body>
 </html>

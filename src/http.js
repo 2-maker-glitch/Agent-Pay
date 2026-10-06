@@ -256,6 +256,53 @@ async function demoCall(u) {
   };
 }
 
+/**
+ * Signature-only endpoint for the console. The browser drives the real protocol
+ * (fetch -> 402 -> sign -> re-send with X-PAYMENT), so the steps a visitor watches
+ * are timed by the network and the receipt comes back in the response headers.
+ * This endpoint never pays anything: it only signs a voucher at the published
+ * price, for a live invoice, to the configured payee.
+ */
+let signHits = [];
+async function demoSign(u) {
+  const route = u.searchParams.get('route') || '';
+  if (!DEMO_RE.test(route)) return { error: 'route not allowed for the demo console' };
+  const invoiceId = u.searchParams.get('invoiceId') || '';
+  const expiry = Number(u.searchParams.get('expiry') || 0);
+  if (!/^0x[0-9a-fA-F]{64}$/.test(invoiceId)) return { error: 'invoiceId must be 32 bytes of hex' };
+  const now = Math.floor(Date.now() / 1000);
+  if (!(expiry > now - 5 && expiry < now + 600)) return { error: 'expiry out of range' };
+
+  const t = Date.now();
+  signHits = signHits.filter((x) => t - x < 3600_000);
+  if (signHits.length && t - signHits[signHits.length - 1] < 2500) return { error: 'one signature every 2.5 seconds' };
+  if (signHits.length > 400) return { error: 'demo signature budget for this hour is spent' };
+  signHits.push(t);
+
+  const matched = matchPaid(new URL(route, 'http://local'), 'GET');
+  if (!matched) return { error: 'route is not priced' };
+  const accept = x402.buildAccept({ resourceKey: matched.key, url: route, dep: DEP, invoiceId, expiry });
+  const agent = L.wallet('agent', NET);
+  const value = {
+    agent: agent.address, payee: accept.payTo, amount: BigInt(accept.maxAmountRequired),
+    invoiceId, expiry: BigInt(expiry), chainId: BigInt(DEP.chainId), vault: DEP.vault,
+  };
+  const signature = await agent.signTypedData(x402.domainOf(DEP), x402.VOUCHER_TYPES, value);
+  return {
+    agent: agent.address, payee: accept.payTo, amount: accept.maxAmountRequired,
+    amountFormatted: accept.amountFormatted, invoiceId, expiry, scheme: accept.scheme,
+    network: accept.network, signature,
+  };
+}
+
+let _domain = null;
+async function domainSeparator() {
+  if (_domain) return _domain;
+  const v = new Contract(DEP.vault, [...x402.VAULT_ABI, 'function domainSeparator() view returns (bytes32)'], testnetProvider());
+  _domain = await v.domainSeparator().catch(() => null);
+  return _domain;
+}
+
 async function freeRoutes(u, res, req) {
   if (u.pathname === '/' || u.pathname === '/console') {
     const html = fs.readFileSync(CONSOLE, 'utf8');
@@ -263,6 +310,8 @@ async function freeRoutes(u, res, req) {
     return res.end(html);
   }
   if (u.pathname === '/v1/demo/call') return send(res, 200, await demoCall(u));
+  if (u.pathname === '/v1/demo/sign') return send(res, 200, await demoSign(u));
+  if (u.pathname === '/v1/demo/domain') return send(res, 200, { vault: DEP.vault, chainId: DEP.chainId, domainSeparator: await domainSeparator() });
   if (u.pathname === '/health' || u.pathname === '/v1/health') {
     return send(res, 200, {
       ok: true, service: 'agentpay', x402Version: x402.X402_VERSION,
