@@ -1,75 +1,125 @@
 # Handoff — BOT Chain AgentPay (Agent OS modules 01 + 02)
 
-Updated: 2026-10-06 (modules 01 and 02 both live)
+Updated: 2026-10-06 (end of session — everything below is committed and live)
 
-## Current milestone
+## Read this first
 
-**Both agent-facing modules of BOT Chain's Agent OS are shipped and settling real value on testnet.**
+Two of the six modules on BOT Chain's published Agent OS are built, deployed and settling. The work
+lives in `/root/botchain-mcp` (git, committed as `Nifemi0`, **not pushed** — see Blocked).
+The public front door is **https://agentpay-rail.netlify.app**.
 
-- Module 01 — MCP server, 9 tools over stdio, real mainnet data. Verified with `node test/smoke.mjs`.
-- Module 02 — AgentPay x402 rail: `AgentPayVault` + facilitator + 4 paid HTTP endpoints, live at
-  `https://agentpay.104-252-77-136.sslip.io` under Let's Encrypt TLS, running under pm2 as `agentpay`.
-- 9 settlements on-chain; 0.039 USDT settled; agent spent **zero gas**; replay attempt rejected 402.
+## Current state
 
-## Live deployments (testnet 968 / bohr)
+| | |
+|---|---|
+| Hosted front door | `https://agentpay-rail.netlify.app` (Netlify, static assets local + API proxied) |
+| Origin (holds the settlement key) | `https://agentpay.104-252-77-136.sslip.io` · pm2 process `agentpay` · nginx site `agentpay` |
+| Relocated locally at | `/root/agentpay-site` (built by `scripts/build-site.sh`) |
+| Settlements on chain | 29 · 0.069 USDT · vault holds 5.0 USDT |
+| Sendable intro | `INTRO.md` (long version, DM version, facts table, honest limits) |
+| Design | implements the reference grammar at `talise.io` — tokens extracted, not invented |
+
+### Deployments (BOT Chain testnet 968 / bohr)
 
 | item | value |
 |---|---|
-| vault | `0xD6ee2f19c7973baa8146A3B7D494983a59462586` |
-| mock USDT | `0x4D3f154CF36a1033e0e5254c30518416f6ffc5c1` |
+| AgentPayVault | `0xD6ee2f19c7973baa8146A3B7D494983a59462586` |
+| MockUSDT (6dp, no permit/3009 — mirrors real USDT) | `0x4D3f154CF36a1033e0e5254c30518416f6ffc5c1` |
 | payee / facilitator | `0x7b65fA9ae72EeF34d0092209070a81e9dCD49E5a` |
-| domain separator | `0x8d03875ef6dacbddf76841d40370efe2a8b9e773ba49d2353a5137d7fba679cc` |
+| agent (pays from vault credit) | `0xFFBa9023dC8ac5510284d9e3b706986d67c22DDB` |
+| EIP-712 domain separator | `0x8d03875ef6dacbddf76841d40370efe2a8b9e773ba49d2353a5137d7fba679cc` |
 | config of record | `deployments/968.json` |
-| nginx site | `/etc/nginx/sites-available/agentpay` → proxy to `127.0.0.1:9681` |
-| pm2 process | `agentpay` (`pm2 save` already run) |
 
-Keys: `.keys/{facilitator,agent}.json`, mode 600, gitignored. Deployer key is the pre-existing
-`deployer.json` (Trestle testnet deployer) — used only as a gas source on testnet.
+Keys: `.keys/{facilitator,agent}.json` (mode 600, gitignored). Testnet gas came from the pre-existing
+`deployer.json` (Trestle's testnet deployer) — **testnet only, mainnet untouched**.
 
-## Verified facts, established the hard way
+## How it works (the part that matters)
 
-- **BOT Chain USDT is vanilla Tether**: no EIP-2612 `permit`, no EIP-3009. Confirmed by scanning the
-  deployed bytecode (`0xaBabc7Ddc03e501d190C676BF3d92ef0e6e87a3C`, 6,188 bytes, not a proxy) for the
-  selectors. Consequence: x402's `exact` scheme is impossible here; use `batch-settlement`.
-- **The hosted x402 facilitator only serves a fixed allowlist** (`/facilitator/supported`): Base
-  Sepolia, Solana devnet, Algorand. Chain 677 is not and will not be on it. Build the facilitator.
-- **`eth_getLogs` silently under-reports above ~15k blocks** on both testnet and mainnet BOT Chain.
-  Chunk at 15k, halve on failure.
-- **A paid endpoint must compute its answer before charging** — the first version settled and then
-  threw a 500, charging the agent for an error.
-- solc needs `viaIR: true` for `AgentPayVault.settle` (stack too deep otherwise).
+```
+agent ──GET paid route──► 402 { price, invoiceId, expiry, payee }
+                        ──sign EIP-712 voucher──► (no gas, no nonce, no chain write)
+                        ──GET + X-PAYMENT header──► facilitator verifies
+                                                 ──► settle() on 968 (facilitator pays gas)
+                                                 ──► data returned + receipt (tx hash) in X-PAYMENT-RESPONSE
+```
 
-## Gotchas for the next session
+- **Why not x402-exact:** it needs EIP-3009 (`transferWithAuthorization`). BOT Chain's USDT is vanilla
+  Tether — verified by scanning the deployed bytecode for selectors, not from docs. The hosted x402
+  facilitator also serves a fixed chain allowlist that excludes 677. Hence x402 v2 `batch-settlement`,
+  built here.
+- **settle() cost:** 80,123 gas = 0.0016 BOT at 20 gwei (measured across 6 settlements).
+- **Prices:** 0.001 / 0.002 / 0.002 / 0.010 USDT. The cheapest route earns roughly its gas; batching is
+  what makes the cheap end comfortable.
+- **Settlement network is a config choice:** `DEPLOYMENT=677 pm2 restart agentpay --update-env` flips
+  the rail to mainnet. `scripts/deploy-mainnet.cjs` deploys the vault there (dry-run unless `--fire`).
 
-- The vote contract and the official bridge only exist on **mainnet 677**; payments settle on **968**.
-  That split is deliberate and documented in `README.md`.
-- **Three bugs the browser test caught that curl could not**: the stats strip was blank because `$` is
-  `querySelector` (single element) and the code indexed it like a NodeList; the mobile layout overflowed
-  540px in a 390px viewport because grid/flex children default to `min-content` and the long route path
-  forced the column wide — fixed with `min-width:0`; and two simultaneous settlements collided on the
-  facilitator's nonce (ethers: "replacement fee too low"), now serialised through one queue.
-  Lesson: always render the UI in a real browser and read the DOM back before calling it done.
-- Agent wallet `0xFFBa9023dC8ac5510284d9e3b706986d67c22DDB` holds 5 USDT of vault credit (4.987 after
-  the run) and testnet BOT. The vault is **not** drained — top up with `scripts/setup-payer.cjs` if it
-  falls below the demo prices.
-- `process.env.PORT` defaults to 9681. Do not reuse 4180 (converge-canton) or 8088 (trestle).
-- The HTTP surface is on chain-agnostic code: switching to mainnet is a change of
-  `deployments/677.json` + real USDT address, no contract changes.
+## Files
+
+```
+src/index.js            MCP server, 9 tools, stdio
+src/http.js             paid HTTP surface + console + /v1/demo/{sign,call,domain} + static assets
+src/x402.js             challenge construction, voucher verify, settlement
+contracts/              AgentPayVault.sol, MockUSDT.sol
+public/index.html       the console (Talise grammar; single file, no build step)
+public/fonts/           self-hosted: Hanken Grotesk + JetBrains Mono (the reference's own families)
+public/shots/           real screenshots of this deployment, used as the page's imagery
+scripts/                lib, deploy, setup-payer, agent-demo, deploy-mainnet, mainnet-recon,
+                        gas-cost, build-site.sh
+deployments/968.json    addresses, ABIs, domain separator
+INTRO.md / README.md / SUBMISSION.md / project.md / handoff.md
+```
+
+## Endpoints
+
+Free: `/` (console) · `/health` · `/v1/pricing` · `/v1/vault` · `/v1/receipts` ·
+`/v1/demo/domain` · `/v1/demo/sign` (signature only, never pays) · `/v1/demo/call` (runs the flow
+server-side) · `/fonts/*` · `/shots/*`
+
+Paid (402 → settle → serve): `/v1/chain/stats` · `/v1/address/:address` ·
+`/v1/bridge/status?chainId=` · `/v1/votes/:projectId?hours=`
+
+## Verified this session (mechanical, not opinion)
+
+- 29 settlements on chain, `settleCount` on chain matches the server count exactly.
+- A real paid call **through the hosted URL**: tx `0xa574e9df…` block 25941440, 6.5s round trip.
+- Hosted: fonts + 4/4 images load from the host, `/health` and `/v1/pricing` 200 through the proxy,
+  the paywall still answers 402 with its body intact.
+- Mobile 390px: zero horizontal overflow (twice fixed — grid/flex children default to `min-content`).
+- Type metrics match the reference: h1 62px w500 ls −1.24px, h2 40px w500 ls −0.8px, body JetBrains Mono.
+- Mobile page height 15,584px vs the reference's 15,586px — density is in the same band.
+- Browsers log one red `402` per paid call. **That is the product working, not an error.**
 
 ## Blocked
 
-**GitHub publish.** No push-capable credential on the box: the live token (login `Nifemi0`) has only
-`read:user` scope; the `ghp_` in `/root/.git-credentials` is revoked (401). Repo is committed locally
-and ready — needs a classic PAT with `repo` scope, then:
+1. **GitHub push.** No push-capable credential on this box: the live token has only `read:user`, the one
+   in `/root/.git-credentials` is revoked (401), no fine-grained `github_pat_` anywhere, no SSH key.
+   Repo is committed and ready. Needs a classic PAT with `repo` scope, then:
+   `git -C /root/botchain-mcp push "https://x-access-token:<PAT>@github.com/Nifemi0/botchain-agentpay.git" main`
+2. **Vercel.** CLI installed, but its token is invalid and no token exists in any project here.
+   The bundle is Vercel-ready (`/root/agentpay-site/vercel.json` has external rewrites) — needs a token
+   from vercel.com/account/tokens, then `vercel deploy --prod` from that directory.
 
-```bash
-git -C /root/botchain-mcp push "https://x-access-token:<PAT>@github.com/Nifemi0/botchain-agentpay.git" main
-```
+## Next, in order
 
-## Next session, in order
-
-1. Push the repo (needs the PAT above).
-2. Deploy the vault to mainnet 677 against real USDT and point the live endpoint at it.
-3. Remote MCP transport (streamable HTTP) so agents connect by URL.
+1. Push the repo (PAT above); optionally redeploy on Vercel.
+2. Deploy the vault to **mainnet 677** against real USDT (`scripts/deploy-mainnet.cjs --fire`, costs
+   ~0.017 BOT from the ops float) and flip `DEPLOYMENT=677`.
+3. **Bring-your-own-wallet in the console** — browser wallet → approve → deposit → sign in-page. This is
+   the difference between a demo that spends our float and a product a stranger can pay with.
 4. Metered batching — accumulate vouchers, settle N per transaction.
-5. Module 03 (Agent Wallet) and the policy layer (per-call spend limits).
+5. Remote MCP transport (streamable HTTP) so agents connect by URL instead of a local process.
+6. Module 03 (Agent Wallet) and the policy layer (per-call spend limits).
+
+## Lessons worth keeping
+
+- **Two rejected designs before this one.** The first was a generic dark dashboard; the second was my own
+  invented "receipt/settlement slip" direction. Both were rejected. The rule (see the
+  `reference-driven-ui-design` skill): **do not author a visual direction — get the reference and
+  implement it.** Sky supplies references (talise.io).
+- **Render the UI in a real browser and read the DOM back.** curl-based checks missed a blank stats
+  strip (my `$()` was `querySelector` and the code indexed it like a NodeList), a 580px mobile overflow,
+  and a nonce collision between concurrent settlements.
+- **A paid endpoint must build its answer before charging** — the first version settled and then 500'd,
+  billing the agent for an error.
+- **`eth_getLogs` silently under-reports above ~15k blocks** on BOT Chain — chunk at 15k, halve on failure.
+- **solc needs `viaIR: true`** for `AgentPayVault.settle` (stack too deep otherwise).
