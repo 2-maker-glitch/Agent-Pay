@@ -216,6 +216,56 @@
     .feature.flip .txt{order:0}
   }
 
+  /* ---------- product imagery: real screens, framed ---------- */
+  .stage{display:grid;grid-template-columns:1.55fr .7fr;gap:clamp(14px,2vw,24px);align-items:start;
+    margin-top:clamp(34px,4.5vw,52px)}
+  .browser{border:1px solid var(--color-line);border-radius:8px;background:var(--color-surface);overflow:hidden;
+    box-shadow:0 40px 90px -34px rgba(18,26,15,.4)}
+  .browser .chrome{display:flex;align-items:center;gap:7px;padding:10px 13px;
+    border-bottom:1px solid var(--color-line);background:var(--color-surface-2)}
+  .browser .chrome i{width:9px;height:9px;border-radius:50%;background:var(--color-line);display:block}
+  .browser .chrome .url{margin-left:10px;font-size:10.5px;color:var(--color-fg-dim)}
+  .browser img,.shot img,.device img{display:block;width:100%}
+  .device{border-radius:34px;background:var(--color-fg);padding:9px;
+    box-shadow:0 30px 70px -34px rgba(18,26,15,.35)}
+  .device img{border-radius:26px}
+  .shot{border:1px solid var(--color-line);border-radius:8px;overflow:hidden;background:var(--color-surface);
+    box-shadow:0 30px 70px -34px rgba(18,26,15,.35)}
+  .caption{font-size:11px;color:var(--color-fg-dim);margin-top:11px}
+  .term{background:var(--color-fg);color:#d7e5d2;border-radius:8px;margin-top:clamp(14px,2vw,24px);
+    padding:15px 17px;font-size:11.5px;line-height:1.85;overflow:hidden}
+  .term .hd{display:flex;gap:7px;align-items:center;margin-bottom:12px}
+  .term .hd i{width:8px;height:8px;border-radius:50%;background:rgba(244,251,239,.22);display:block}
+  .term .hd span{margin-left:6px;font-size:10px;letter-spacing:.14em;text-transform:uppercase;
+    color:rgba(244,251,239,.5)}
+  .term .l{white-space:pre-wrap;word-break:break-all}
+  .term .g{color:#9cc27f}
+  .term .ok{color:var(--color-accent-light)}
+  .term .w{color:#f0d9a8}
+  .term .d{color:rgba(233,240,230,.45)}
+  @media (max-width:900px){
+    .stage{grid-template-columns:1fr}
+    .stage .browser{display:none}
+  }
+
+  /* real data viz: a settlement's cost against what a call earns */
+  .bars{margin-top:4px}
+  .bar{display:grid;grid-template-columns:96px 1fr auto;gap:10px;align-items:center;padding:8px 0;
+    border-bottom:1px solid var(--color-line-soft);font-size:11.5px}
+  .bar:last-child{border-bottom:0}
+  .bar .t{color:var(--color-fg-muted)}
+  .bar .track{height:9px;background:var(--color-surface-2);border-radius:2px;overflow:hidden}
+  .bar .fill{height:100%;background:var(--color-accent);border-radius:2px}
+  .bar .fill.soft{background:var(--color-accent-light)}
+  .bar .v{font-variant-numeric:tabular-nums;color:var(--color-fg);white-space:nowrap}
+
+  /* vector marks — drawn paths, never emoji or text glyphs */
+  .marks{display:flex;gap:9px;flex-wrap:wrap;margin-top:20px}
+  .mark{display:inline-flex;align-items:center;gap:8px;height:34px;padding:0 12px;border-radius:999px;
+    background:var(--color-surface);border:1px solid var(--color-line);font-size:11px;
+    letter-spacing:.06em;text-transform:uppercase;color:var(--color-fg-muted)}
+  .mark svg{width:15px;height:15px;flex:0 0 15px;color:var(--color-accent)}
+
   /* ---------- pricing ---------- */
   .ptable{width:100%;border-collapse:collapse;font-size:13px}
   .ptable th{text-align:left;font-size:10.5px;letter-spacing:.13em;text-transform:uppercase;
@@ -300,6 +350,64 @@
   <div class="cta">
     <a class="btn btn-solid" href="#console">Run a live paid call</a>
     <a class="btn btn-ghost" href="#why">Why not the standard scheme</a>
+  </div>
+
+  <!-- real screens from this deployment, not mockups -->
+  <div class="stage reveal">
+    <div>
+      <div class="browser">
+        <div class="chrome"><i></i><i></i><i></i><span class="url">agentpay.104-252-77-136.sslip.io</span></div>
+        <img src="/shots/console-desktop-settled.png" width="1440" height="960" decoding="async"
+             alt="The AgentPay console: four paid routes with prices, a four-step settlement flow, and a completed payment showing its transaction hash and block number">
+      </div>
+      <div class="term">
+        <div class="hd"><i></i><i></i><span>agent session</span></div>
+        <div class="l g">$ hermes mcp add botchain --command node --args src/index.js</div>
+        <div class="l d">  ✓ 9 tools registered · live read access to BOT Chain</div>
+        <div class="l">&gt; <span class="ok">ecosystem_votes</span> { projectId: 508, hours: 6 }</div>
+        <div class="l d">  71 votes · 16 distinct wallets · read from chain logs</div>
+        <div class="l w">$ GET /v1/votes/508?hours=6</div>
+        <div class="l w">  402 payment required · 0.010 USDT · inv 0x7a1f… · exp 300s</div>
+        <div class="l d">  signed EIP-712 voucher · gas spent 0 · no chain write</div>
+        <div class="l">  <span class="ok">200 OK</span> · tx 0xe2765005c9e0… · block 25935722</div>
+      </div>
+    </div>
+    <div>
+      <div class="device">
+        <img src="/shots/console-mobile-settled.png" width="390" height="844" decoding="async"
+             alt="The same console on a phone, showing all four steps completed and a settled payment">
+      </div>
+      <p class="caption">Live screens, captured from this deployment — not mockups.</p>
+    </div>
+  </div>
+
+  <div class="marks reveal">
+    <span class="mark">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" aria-hidden="true">
+        <circle cx="12" cy="12" r="9.2"/><path d="M8 9.4h8M12 7.4v9.2M9.6 12.2h4.8"/></svg>
+      USDT · BOT Chain
+    </span>
+    <span class="mark">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M10.5 13.5 13.5 10.5"/><path d="M8.2 15.8 6.6 17.4a3.1 3.1 0 0 1-4.4-4.4l2.5-2.5a3.1 3.1 0 0 1 4.4 0"/>
+        <path d="M15.8 8.2l1.6-1.6a3.1 3.1 0 0 1 4.4 4.4l-2.5 2.5a3.1 3.1 0 0 1-4.4 0"/></svg>
+      link tx
+    </span>
+    <span class="mark">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M4 18.5c3.6 0 5.4-13 9-13M13 5.5h3.4M13 5.5c2 0 3 1 3 3.4M15.6 18.5H19"/></svg>
+      EIP-712 voucher
+    </span>
+    <span class="mark">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <rect x="3.5" y="4.5" width="17" height="15" rx="2"/><path d="M7.5 9.5l2.2 2.2-2.2 2.2M12.5 14.5h4"/></svg>
+      MCP · 9 tools
+    </span>
+    <span class="mark">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M12 3.2 20 7.6v8.8L12 20.8 4 16.4V7.6z"/><path d="M12 11.4v5.6M12 11.4 20 7.6M12 11.4 4 7.6"/></svg>
+      677 mainnet reads
+    </span>
   </div>
 
   <div class="proof">
@@ -448,15 +556,22 @@
           <li><b>Replay-proof</b> — invoices are consumed on-chain and rejected a second time</li>
         </ul>
       </div>
-      <div class="panel">
-        <div class="ph">Vault · 0xD6ee2f19…2586</div>
-        <div class="pb">
-          <div class="kv"><span class="k">deposit()</span><span class="v">prepaid balance per agent</span></div>
-          <div class="kv"><span class="k">voucherHash()</span><span class="v">EIP-712, name "AgentPay" v1</span></div>
-          <div class="kv"><span class="k">settle()</span><span class="v">address[] payee uint256[] bytes32[] bytes[]</span></div>
-          <div class="kv"><span class="k">invoiceUsed[]</span><span class="v">replay guard, on-chain</span></div>
-          <div class="kv"><span class="k">settleCount</span><span class="v num" id="kVCount">–</span></div>
-          <div class="kv"><span class="k">totalSettled</span><span class="v num" id="kVTotal">–</span></div>
+      <div>
+        <div class="device">
+          <img src="/shots/console-mobile.png" width="390" height="844" decoding="async"
+               alt="The console mid-call on a phone: a route selected, its price quoted, and a voucher signed">
+        </div>
+        <p class="caption">The four-step flow, mid-call on a phone.</p>
+        <div class="panel" style="margin-top:18px">
+          <div class="ph">Vault · 0xD6ee2f19…2586</div>
+          <div class="pb">
+            <div class="kv"><span class="k">deposit()</span><span class="v">prepaid balance per agent</span></div>
+            <div class="kv"><span class="k">voucherHash()</span><span class="v">EIP-712, name "AgentPay" v1</span></div>
+            <div class="kv"><span class="k">settle()</span><span class="v">address[] payee uint256[] bytes32[] bytes[]</span></div>
+            <div class="kv"><span class="k">invoiceUsed[]</span><span class="v">replay guard, on-chain</span></div>
+            <div class="kv"><span class="k">settleCount</span><span class="v num" id="kVCount">–</span></div>
+            <div class="kv"><span class="k">totalSettled</span><span class="v num" id="kVTotal">–</span></div>
+          </div>
         </div>
       </div>
     </div>
@@ -526,6 +641,12 @@
           vault deposit an agent chooses to make.</p>
       </div>
     </div>
+    <div class="panel reveal" style="margin-bottom:26px">
+      <div class="ph">Prices at a glance</div>
+      <div class="pb">
+        <div class="bars" id="priceBars"></div>
+      </div>
+    </div>
     <table class="ptable reveal">
       <thead><tr><th>Route</th><th>What it returns</th><th>Price</th></tr></thead>
       <tbody id="ptbody"></tbody>
@@ -543,6 +664,11 @@
         <p class="lede">Everything below is deployed and queryable right now. The log is the last
           settlements as this page loaded.</p>
       </div>
+    </div>
+    <div class="browser reveal" style="margin-bottom:34px">
+      <div class="chrome"><i></i><i></i><i></i><span class="url">the console as it loaded for this visit</span></div>
+      <img src="/shots/console-desktop.png" width="1440" height="960" decoding="async"
+           alt="The AgentPay console showing four priced routes, each with its description and price in USDT">
     </div>
     <div class="feature" style="grid-template-columns:1fr 1.15fr;border-bottom:0">
       <div class="panel reveal">
@@ -705,6 +831,14 @@ async function loadRoutes() {
       <td class="muted" style="font-size:12.5px">${r.desc}</td>
       <td class="p">${r.price}</td>
     </tr>`).join('');
+  // bars are driven by the real prices, not drawn by hand
+  const max = Math.max(...ROUTES.map((r) => Number(r.price.split(' ')[0])));
+  $('#priceBars').innerHTML = ROUTES.map((r) => {
+    const pct = Math.max(7, Math.round((Number(r.price.split(' ')[0]) / max) * 100));
+    return `<div class="bar"><span class="t">${r.path.replace(/^\/v1\//, '/')}</span>` +
+      `<span class="track"><span class="fill" style="width:${pct}%"></span></span>` +
+      `<span class="v">${r.price}</span></div>`;
+  }).join('');
   document.querySelectorAll('#routes .route').forEach((b) => b.addEventListener('click', () => runCall(b)));
 }
 

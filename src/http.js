@@ -304,13 +304,15 @@ async function domainSeparator() {
 }
 
 async function freeRoutes(u, res, req) {
-  if (u.pathname.startsWith('/fonts/')) {
-    const name = u.pathname.slice('/fonts/'.length);
-    if (!/^[a-z0-9-]+\.woff2$/.test(name)) return send(res, 404, { error: 'not found' });
-    const file = path.join(L.ROOT, 'public', 'fonts', name);
+  if (u.pathname.startsWith('/fonts/') || u.pathname.startsWith('/shots/')) {
+    const m = /^\/(fonts|shots)\/([a-z0-9-]+\.(woff2|png))$/.exec(u.pathname);
+    if (!m) return send(res, 404, { error: 'not found' });
+    const file = path.join(L.ROOT, 'public', m[1], m[2]);
     if (!fs.existsSync(file)) return send(res, 404, { error: 'not found' });
     const buf = fs.readFileSync(file);
-    res.writeHead(200, { 'content-type': 'font/woff2', 'content-length': buf.length, 'cache-control': 'public, max-age=31536000, immutable' });
+    const type = m[3] === 'png' ? 'image/png' : 'font/woff2';
+    res.writeHead(200, { 'content-type': type, 'content-length': buf.length,
+      'cache-control': 'public, max-age=86400' });
     return res.end(buf);
   }
   if (u.pathname === '/' || u.pathname === '/console') {
