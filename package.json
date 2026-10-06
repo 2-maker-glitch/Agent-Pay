@@ -1,0 +1,21 @@
+{
+  "name": "botchain-agentpay",
+  "version": "0.2.0",
+  "description": "BOT Chain Agent OS modules 01+02 — MCP server for chain read access, plus an x402/AgentPay rail where agents pay per call in USDT with zero gas",
+  "license": "MIT",
+  "main": "src/index.js",
+  "scripts": {
+    "mcp": "node src/index.js",
+    "serve": "node src/http.js",
+    "deploy": "node scripts/deploy.cjs",
+    "setup-payer": "node scripts/setup-payer.cjs",
+    "demo": "node scripts/agent-demo.cjs",
+    "smoke": "node test/smoke.mjs"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.0.0",
+    "ethers": "^6.13.0",
+    "solc": "0.8.26",
+    "zod": "^3.23.0"
+  }
+}
