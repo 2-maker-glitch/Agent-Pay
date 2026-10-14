@@ -1,0 +1,83 @@
+# AgentPay
+
+> AgentPay is a machine-payment rail for AI agents on BOT Chain. Agents can pay per API call in USDT by signing an EIP-712 voucher; a facilitator settles it on-chain and pays the gas.
+
+## Canonical links
+
+- Website: https://agentpay-rail.netlify.app/
+- LLM context: https://agentpay-rail.netlify.app/llms.txt
+- Payment rail: https://agentpay-rail.netlify.app/product/
+- Developer guide: https://agentpay-rail.netlify.app/developers/
+- BOT Chain integration: https://agentpay-rail.netlify.app/network/
+- Interactive console: https://agentpay-rail.netlify.app/console/
+- Service health: https://agentpay-rail.netlify.app/health
+- X account: https://x.com/AgentPay_bot
+- BOT Chain launch post: https://x.com/AgentPay_bot/status/2110268057788481823
+
+## Mainnet deployment
+
+- Network: BOT Chain Mainnet
+- Chain ID: 677
+- RPC: https://rpc.botchain.ai
+- Explorer: https://scan.botchain.ai
+- AgentPayVault: 0xAd06420D3e247186195189ed0DF571Cdce9f038C
+- Contract explorer: https://scan.botchain.ai/address/0xAd06420D3e247186195189ed0DF571Cdce9f038C
+- Settlement token: USDT
+- USDT contract: 0xaBabc7Ddc03e501d190C676BF3d92ef0e6e87a3C
+- Token decimals: 6
+- Deployed: 2026-10-14
+
+## Protocol
+
+1. An agent requests a priced API resource.
+2. The API returns HTTP 402 with the price, invoice ID, expiry, payee, asset and vault.
+3. The agent signs an EIP-712 voucher off-chain. The agent spends no BOT on gas.
+4. The facilitator verifies and settles the voucher through AgentPayVault.
+5. The API returns the requested data with an on-chain settlement receipt.
+
+The settlement scheme is `batch-settlement`. It uses a prepaid vault because BOT Chain USDT does not expose EIP-2612 permit or EIP-3009 transferWithAuthorization.
+
+## Live status and boundaries
+
+- The AgentPayVault contract is deployed on BOT Chain mainnet, chain 677.
+- The public paid API and facilitator are online.
+- The browser console uses a funded testnet payer on chain 968 so visitors can demonstrate the complete payment flow without connecting a wallet or spending real USDT.
+- Data returned by the demonstration endpoints is read from BOT Chain mainnet.
+- The mainnet contract and testnet browser demonstration are deliberately identified separately.
+
+## Public API
+
+Free endpoints:
+
+- GET /health
+- GET /v1/pricing
+- GET /v1/vault
+- GET /v1/receipts
+
+Paid endpoints:
+
+- GET /v1/chain/stats — 0.001 USDT — mainnet head and gas price
+- GET /v1/address/:address — 0.002 USDT — BOT/USDT balances, nonce and contract state
+- GET /v1/bridge/status?chainId=1 — 0.002 USDT — bridge pause state, limits and liquidity
+- GET /v1/votes/:projectId?hours=6 — 0.010 USDT — votes and distinct wallet count
+
+## MCP tools
+
+AgentPay's BOT Chain MCP server exposes nine read tools over stdio:
+
+- chain_stats
+- address_overview
+- token_info
+- bridge_config
+- bridge_status
+- ecosystem_votes
+- ecosystem_top
+- contract_inspect
+- tx_info
+
+## Official submission details
+
+1. Website: https://agentpay-rail.netlify.app/
+2. BOT Chain mainnet contract: 0xAd06420D3e247186195189ed0DF571Cdce9f038C
+3. X account: https://x.com/AgentPay_bot
+4. Post announcing the project on BOT Chain: https://x.com/AgentPay_bot/status/2110268057788481823

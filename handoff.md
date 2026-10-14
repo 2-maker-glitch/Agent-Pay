@@ -2,6 +2,12 @@
 
 Updated: 2026-10-14 (mainnet contract + public-site visual refresh live)
 
+## 2026-10-14 llms.txt
+
+- Added `/llms.txt` with canonical website/page links, X profile and launch post, BOT Chain mainnet deployment details, protocol flow, live-vs-demo boundary, API pricing and MCP tools.
+- Added `<link rel="alternate" type="text/plain" href="/llms.txt">` to every page and a visible footer link.
+- Corrected the PNG favicon MIME declaration from `image/svg+xml` to `image/png`.
+
 ## 2026-10-14 exact-logo correction
 
 - Second user correction: the manually redrawn rounded-square mark still changed the supplied logo's proportions and stroke geometry.
