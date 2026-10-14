@@ -8,9 +8,11 @@ ORIGIN=https://agentpay.104-252-77-136.sslip.io
 
 rm -rf "$OUT"; mkdir -p "$OUT"
 cp "$SRC/public/index.html" "$OUT/index.html"
-mkdir -p "$OUT/fonts" "$OUT/shots"
+cp "$SRC/public/favicon.svg" "$OUT/favicon.svg"
+mkdir -p "$OUT/fonts" "$OUT/shots" "$OUT/assets"
 cp "$SRC/public/fonts/"*.woff2 "$OUT/fonts/"
 cp "$SRC/public/shots/"*.png "$OUT/shots/"
+cp "$SRC/public/assets/"* "$OUT/assets/"
 
 # Netlify: shadow the dynamic paths with a 200 proxy to the live origin
 cat > "$OUT/_redirects" <<EOF
@@ -37,6 +39,11 @@ cat > "$OUT/netlify.toml" <<EOF
   for = "/fonts/*"
   [headers.values]
     Cache-Control = "public, max-age=31536000, immutable"
+
+[[headers]]
+  for = "/assets/*"
+  [headers.values]
+    Cache-Control = "public, max-age=86400"
 
 [[headers]]
   for = "/shots/*"

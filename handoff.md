@@ -1,6 +1,16 @@
 # Handoff — BOT Chain AgentPay (Agent OS modules 01 + 02)
 
-Updated: 2026-10-06 (end of session — everything below is committed and live)
+Updated: 2026-10-14 (mainnet contract + public-site visual refresh live)
+
+## 2026-10-14 milestone
+
+- Public front door refreshed at `https://agentpay-rail.netlify.app`.
+- Added the AgentPay × BOT Chain launch art, protocol-flow diagram, voucher anatomy, and settlement-economics visual.
+- Added favicon plus Open Graph / X large-card metadata.
+- Mainnet vault is linked and identified as chain 677: `0xAd06420D3e247186195189ed0DF571Cdce9f038C`.
+- The page remains explicit that the clickable settlement demo uses testnet 968; no production claim was substituted for the demo.
+- `scripts/build-site.sh` now includes `assets/` and `favicon.svg` while preserving the `/health` and `/v1/*` proxy rules.
+- Live verification: all static assets + four free API endpoints return 200; an unpaid paid-route request returns 402; Chromium desktop 1440px and mobile 390px show zero horizontal overflow and no console/page errors.
 
 ## Read this first
 

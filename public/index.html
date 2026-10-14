@@ -6,6 +6,20 @@
 <title>AgentPay — machine-payable data on BOT Chain</title>
 <meta name="description" content="A payment rail for AI agents on BOT Chain. The agent signs a voucher, the facilitator settles it on-chain and pays the fee. No gas, no account, no subscription.">
 <meta name="theme-color" content="#edf0ea">
+<link rel="canonical" href="https://agentpay-rail.netlify.app/">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="AgentPay">
+<meta property="og:title" content="AgentPay — gasless machine payments on BOT Chain">
+<meta property="og:description" content="AI agents pay per call in USDT. The facilitator settles on BOT Chain; the agent holds no gas.">
+<meta property="og:url" content="https://agentpay-rail.netlify.app/">
+<meta property="og:image" content="https://agentpay-rail.netlify.app/assets/agentpay-botchain.jpg">
+<meta property="og:image:width" content="1280">
+<meta property="og:image:height" content="720">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="AgentPay — live on BOT Chain">
+<meta name="twitter:description" content="Gasless, per-call USDT payments for AI agents.">
+<meta name="twitter:image" content="https://agentpay-rail.netlify.app/assets/agentpay-botchain.jpg">
 <style>
   /* ==========================================================================
      Tokens extracted from the reference (talise.io) via computed styles —
@@ -312,6 +326,18 @@
 
   .reveal{opacity:0;transform:translateY(16px);transition:opacity .7s var(--ease),transform .7s var(--ease)}
   .reveal.in{opacity:1;transform:none}
+  /* ---------- editorial visuals ---------- */
+  .launch-art{margin-top:34px;border:1px solid var(--color-line);border-radius:3px;overflow:hidden;background:#101410}
+  .launch-art img,.visual img{display:block;width:100%;height:auto}
+  .launch-art figcaption,.visual figcaption{padding:10px 12px;border-top:1px solid var(--color-line);font:11px/1.45 var(--font-mono);letter-spacing:.06em;text-transform:uppercase;color:var(--color-fg-dim);background:var(--color-surface)}
+  .visual{margin-top:26px;border:1px solid var(--color-line);border-radius:3px;overflow:hidden;background:var(--color-surface)}
+  .visual.slim{max-width:900px;margin-left:auto;margin-right:auto}
+  .mainnet-chip{display:inline-flex;align-items:center;gap:8px;margin-top:18px;padding:9px 11px;border:1px solid var(--color-line);border-radius:3px;background:var(--color-surface);font:11px/1.4 var(--font-mono);color:var(--color-fg-muted)}
+  .mainnet-chip i{width:7px;height:7px;border-radius:50%;background:var(--color-accent);box-shadow:0 0 0 3px color-mix(in srgb,var(--color-accent) 18%,transparent)}
+  .mainnet-chip a{color:var(--color-fg);text-decoration:none}
+  .mainnet-chip a:hover{text-decoration:underline}
+  @media(max-width:700px){.launch-art{margin-top:24px}.launch-art figcaption,.visual figcaption{font-size:9.5px}.mainnet-chip{font-size:9.5px;max-width:100%;overflow:hidden}.mainnet-chip a{overflow:hidden;text-overflow:ellipsis}}
+
   @media (prefers-reduced-motion:reduce){
     html{scroll-behavior:auto}
     *,*::before,*::after{transition-duration:.001s!important;animation-duration:.001s!important}
@@ -332,7 +358,7 @@
       <a href="#proof">Proof</a>
     </nav>
     <div class="right">
-      <span class="pill"><i></i>eip155:968</span>
+      <span class="pill"><i></i>mainnet 677</span>
       <a class="btn btn-solid btn-sm" href="#console">Run a paid call</a>
     </div>
   </div>
@@ -351,12 +377,17 @@
     <a class="btn btn-solid" href="#console">Run a live paid call</a>
     <a class="btn btn-ghost" href="#why">Why not the standard scheme</a>
   </div>
+  <div class="mainnet-chip"><i></i><span>Mainnet vault</span><a href="https://scan.botchain.ai/address/0xAd06420D3e247186195189ed0DF571Cdce9f038C" target="_blank" rel="noopener">0xAd06420D3e247186195189ed0DF571Cdce9f038C ↗</a></div>
+  <figure class="launch-art reveal">
+    <img src="/assets/agentpay-botchain.jpg" width="1280" height="720" decoding="async" fetchpriority="high" alt="AgentPay and BOT Chain launch artwork">
+    <figcaption>AgentPay × BOT Chain · mainnet contract live · chain 677</figcaption>
+  </figure>
 
   <!-- real screens from this deployment, not mockups -->
   <div class="stage reveal">
     <div>
       <div class="browser">
-        <div class="chrome"><i></i><i></i><i></i><span class="url">agentpay.104-252-77-136.sslip.io</span></div>
+        <div class="chrome"><i></i><i></i><i></i><span class="url">agentpay-rail.netlify.app</span></div>
         <img src="/shots/console-desktop-settled.png" width="1440" height="960" decoding="async"
              alt="The AgentPay console: four paid routes with prices, a four-step settlement flow, and a completed payment showing its transaction hash and block number">
       </div>
@@ -502,6 +533,10 @@
         <code>settle() → 80,123 gas · 0.0016 BOT</code>
       </div>
     </div>
+    <figure class="visual reveal">
+      <img src="/assets/payment-flow.svg" width="1200" height="620" loading="lazy" alt="AgentPay flow: agent request, HTTP 402 quote, EIP-712 signature and BOT Chain settlement">
+      <figcaption>Request → quote → signature → settlement. The agent never needs BOT for gas.</figcaption>
+    </figure>
   </div>
 </section>
 
@@ -555,6 +590,10 @@
           <li><b>Batched</b> — <span class="mono">settle()</span> takes arrays, so N vouchers collapse into one transaction</li>
           <li><b>Replay-proof</b> — invoices are consumed on-chain and rejected a second time</li>
         </ul>
+        <figure class="visual">
+          <img src="/assets/voucher-anatomy.svg" width="900" height="620" loading="lazy" alt="The fields signed in an AgentPay EIP-712 voucher">
+          <figcaption>The signed payload is bound to chain 677 and the deployed mainnet vault.</figcaption>
+        </figure>
       </div>
       <div>
         <div class="device">
@@ -589,8 +628,12 @@
           <li><b>Batching</b> is what makes the cheap end comfortably profitable</li>
         </ul>
       </div>
-      <div class="panel">
-        <div class="ph">Cost per settlement · measured on chain</div>
+      <div>
+        <figure class="visual" style="margin-top:0">
+          <img src="/assets/settlement-economics.svg" width="900" height="620" loading="lazy" alt="AgentPay settlement cost compared with paid API call prices">
+          <figcaption>Measured gas and route pricing — a visible reason to build on BOT Chain.</figcaption>
+        </figure>
+        <div class="panel" style="margin-top:18px">
         <div class="pb">
           <div class="kv"><span class="k">gas used</span><span class="v num">80,123</span></div>
           <div class="kv"><span class="k">gas price</span><span class="v num">20.0 gwei</span></div>
@@ -599,6 +642,7 @@
           <div class="kv"><span class="k">blocks to confirm</span><span class="v">1</span></div>
         </div>
       </div>
+    </div>
     </div>
 
     <div class="feature flip reveal">
@@ -672,9 +716,10 @@
     </div>
     <div class="feature" style="grid-template-columns:1fr 1.15fr;border-bottom:0">
       <div class="panel reveal">
-        <div class="ph">Deployed · BOT Chain testnet 968</div>
+        <div class="ph">Interactive settlement demo · BOT Chain testnet 968</div>
         <div class="pb">
-          <div class="kv"><span class="k">AgentPayVault</span><span class="v" id="aVault">–</span></div>
+          <div class="kv"><span class="k">Mainnet vault · 677</span><span class="v"><a href="https://scan.botchain.ai/address/0xAd06420D3e247186195189ed0DF571Cdce9f038C" target="_blank" rel="noopener">0xAd06420D…f038C ↗</a></span></div>
+          <div class="kv"><span class="k">Demo AgentPayVault</span><span class="v" id="aVault">–</span></div>
           <div class="kv"><span class="k">MockUSDT</span><span class="v" id="aToken">–</span></div>
           <div class="kv"><span class="k">payee / facilitator</span><span class="v" id="aPayee">–</span></div>
           <div class="kv"><span class="k">EIP-712 domain</span><span class="v" id="aDomain">–</span></div>
@@ -700,10 +745,10 @@
     </div>
     <div class="limits reveal">
       <div>
-        <h3>Payments settle on testnet</h3>
-        <p>The vault runs on BOT Chain testnet with a test USDT that deliberately replicates the real
-          token's constraints — no permit, no EIP-3009. The contract is token-agnostic; mainnet is a
-          deployment, not a rewrite.</p>
+        <h3>Mainnet contract is live; the click-through demo stays on testnet</h3>
+        <p>The production vault is deployed on BOT Chain mainnet 677 with real USDT at
+          <span class="mono">0xAd06420D…f038C</span>. The interactive console still settles against the testnet vault,
+          so visitors can run the complete flow without spending real funds.</p>
       </div>
       <div>
         <h3>The console pays from a demo float</h3>
