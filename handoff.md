@@ -2,6 +2,12 @@
 
 Updated: 2026-10-14 (mainnet contract + public-site visual refresh live)
 
+## 2026-10-14 exact-logo correction
+
+- Second user correction: the manually redrawn rounded-square mark still changed the supplied logo's proportions and stroke geometry.
+- The exact uploaded image is now the source of truth: `public/assets/agentpay-logo-source.jpg` preserves the untouched upload; `agentpay-logo-exact.png` is a background-removed crop of those same pixels, not a redraw.
+- Header/footer marks use that exact PNG directly. The favicon, 192px icon and social card are generated from the same extracted pixels.
+
 ## 2026-10-14 logo-led correction
 
 - User correction: the supplied logo is a rounded-square shell with a diagonal rail and green endpoint—not a circular plus. The prior orange editorial system did not follow the logo and was rejected.
