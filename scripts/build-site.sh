@@ -7,12 +7,8 @@ OUT=/root/agentpay-site
 ORIGIN=https://agentpay.104-252-77-136.sslip.io
 
 rm -rf "$OUT"; mkdir -p "$OUT"
-cp "$SRC/public/index.html" "$OUT/index.html"
-cp "$SRC/public/favicon.svg" "$OUT/favicon.svg"
-mkdir -p "$OUT/fonts" "$OUT/shots" "$OUT/assets"
-cp "$SRC/public/fonts/"*.woff2 "$OUT/fonts/"
-cp "$SRC/public/shots/"*.png "$OUT/shots/"
-cp "$SRC/public/assets/"* "$OUT/assets/"
+# Copy the complete multi-page site tree, including shared CSS/JS and assets.
+cp -a "$SRC/public/." "$OUT/"
 
 # Netlify: shadow the dynamic paths with a 200 proxy to the live origin
 cat > "$OUT/_redirects" <<EOF
@@ -54,7 +50,7 @@ EOF
 cat > "$OUT/README.txt" <<EOF
 AgentPay — hosted front door.
 
-index.html, fonts/, shots/ are static and served by the host.
+index.html, product/, developers/, network/, console/, site.css, site.js, fonts/ and assets/ are static and served by the host.
 /health and /v1/* are proxied to the live rail at $ORIGIN, because that is where
 the facilitator key lives and where settlement happens on BOT Chain testnet 968.
 If the origin host is down, the page still renders but live calls fail.

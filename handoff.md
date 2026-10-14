@@ -2,6 +2,16 @@
 
 Updated: 2026-10-14 (mainnet contract + public-site visual refresh live)
 
+## 2026-10-14 multi-page redesign
+
+- Replaced the previous one-page Talise-style site completely; retained only the AgentPay circular plus mark.
+- New information architecture: `/` home, `/product/` payment rail, `/developers/` integration guide, `/network/` BOT Chain rationale, `/console/` live payment demo.
+- New visual system: editorial protocol dossier — paper background, black rules/type, signal orange and yellow, asymmetric compositions, no card-grid SaaS template.
+- Shared assets are `public/site.css` and `public/site.js`; `scripts/build-site.sh` copies the complete recursive public tree.
+- New 1200×630 social card at `public/assets/agentpay-og-v2.png` is used on every page.
+- Browser verification: all five pages return 200 with zero desktop overflow; all five return 200 at 390px after fixing the Console grid's min-content overflow. Mobile menu opens on every page. No browser console/page errors in production.
+- Functional verification: the rebuilt Console loaded four live prices and completed a real demonstration call for 0.001 USDT on testnet; receipt returned at block 26806644. `/health` is 200 and an unpaid paid route remains 402.
+
 ## 2026-10-14 milestone
 
 - Public front door refreshed at `https://agentpay-rail.netlify.app`.
