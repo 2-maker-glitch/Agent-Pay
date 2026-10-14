@@ -2,6 +2,13 @@
 
 Updated: 2026-10-14 (mainnet contract + public-site visual refresh live)
 
+## 2026-10-14 logo-led correction
+
+- User correction: the supplied logo is a rounded-square shell with a diagonal rail and green endpoint—not a circular plus. The prior orange editorial system did not follow the logo and was rejected.
+- Rebuilt the entire shared visual system from the logo: off-white `#eceee9`, ink `#12180e`, deep green `#316820`, lime `#d8ed76`; rounded modular surfaces, diagonal connections and circular endpoint motifs.
+- Removed orange, newspaper/broadsheet rules, sharp ledger styling and generic circular-plus marks.
+- Added the correct vector mark (`public/assets/agentpay-mark.svg`), matching favicon, and a new 1200×630 logo-led social card (`public/assets/agentpay-og-v3.png`).
+
 ## 2026-10-14 multi-page redesign
 
 - Replaced the previous one-page Talise-style site completely; retained only the AgentPay circular plus mark.
