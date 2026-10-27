@@ -9,7 +9,7 @@ const META={
   '/v1/bridge/status':'official bridge pause, limits, liquidity'
 };
 const keyOf=(p)=>Object.keys(META).find(k=>p.startsWith(k));
-const withArg=(p)=>p.startsWith('/v1/votes')?p+'/508?hours=6':p.startsWith('/v1/address')?p+'/0xfad8473C54c058b58DF32caDf6415FBa15639682':p.startsWith('/v1/bridge')?p+'?chainId=1':p;
+const withArg=(p)=>p.startsWith('/v1/votes')?p+'/19?hours=6':p.startsWith('/v1/address')?p+'/0x54A0Ef469f005d295b60E7c071106953AC5B621C':p.startsWith('/v1/bridge')?p+'?chainId=1':p;
 let ROUTES=[];
 async function getJSON(url){const r=await fetch(url);if(!r.ok)throw new Error(`${url} returned ${r.status}`);return r.json()}
 async function loadConsole(){

@@ -329,7 +329,7 @@ async function freeRoutes(u, res, req) {
       network: `eip155:${DEP.chainId}`, vault: DEP.vault, token: DEP.token, payee: DEP.payee,
       facilitator: facilitator.address, agent: L.wallet('agent', NET).address,
       paidRoutes: Object.values(PAID_ROUTES).map((r) => r.key),
-      dataSource: 'BOT Chain mainnet (677)', settlement: `BOT Chain testnet (${DEP.chainId})`,
+      dataSource: 'BOT Chain mainnet (677)', settlement: `BOT Chain ${DEP.chainId === 677 ? 'mainnet' : 'testnet'} (${DEP.chainId})`,
     });
   }
   if (u.pathname === '/v1/pricing') {

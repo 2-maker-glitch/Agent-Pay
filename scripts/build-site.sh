@@ -52,7 +52,7 @@ AgentPay — hosted front door.
 
 index.html, product/, developers/, network/, console/, site.css, site.js, fonts/ and assets/ are static and served by the host.
 /health and /v1/* are proxied to the live rail at $ORIGIN, because that is where
-the facilitator key lives and where settlement happens on BOT Chain testnet 968.
+the facilitator key lives and where settlement happens on BOT Chain mainnet 677.
 If the origin host is down, the page still renders but live calls fail.
 EOF
 

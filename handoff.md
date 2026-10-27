@@ -1,6 +1,34 @@
 # Handoff — BOT Chain AgentPay (Agent OS modules 01 + 02)
 
-Updated: 2026-10-14 (mainnet contract + public-site visual refresh live)
+Updated: 2026-10-16 (Vercel rehome + bring-your-own-wallet in the interface)
+
+## 2026-10-16 Vercel rehome + bring-your-own-wallet (closes open item 3)
+
+- Hosted front door moved to **https://agentpay-rail.vercel.app** (project `agentpay-rail`, team
+  `nifemi0s-projects`). The Netlify account that hosted this site is credit-blocked — every deploy
+  returns `403 Account credit usage exceeded - new deploys are blocked until credits are added` — so
+  the bundle now ships on Vercel. `scripts/build-site.sh` still rewrites `/health` and `/v1/*` to the
+  origin.
+- **Build gotcha:** `build-site.sh` does `rm -rf $OUT`, which deletes `.vercel/`. Re-link after every
+  build: `vercel link --yes --project agentpay-rail --scope nifemi0s-projects`.
+- Mobile/desktop verification: no horizontal overflow at 1440px or 390px, no console/page errors, on
+  the wallet page and on all six routes.
+- Criterion 3 (BOT Chain display): logo + `https://botchain.ai` + `https://scan.botchain.ai` present in
+  the footer of all six routes. Canonical/OG/twitter meta and `llms.txt` moved off Netlify (66
+  references, source tree included so a rebuild cannot revert them).
+- **New `/vault/` page — the bring-your-own-wallet flow.** Connect a BOT Chain wallet, approve USDT,
+  deposit into `AgentPayVault`, withdraw. `public/vault.js` has no dependencies: hand-rolled selector
+  encoding, EIP-1193, eager reconnect via `eth_accounts`, and `wallet_switchEthereumChain` /
+  `wallet_addEthereumChain` for 677. Styling appended to `site.css` as `.vw-*`; the page is linked from
+  the nav and footer of every page.
+- Mainnet-verified (mock EIP-1193 provider driving the **live** page, calldata validated by `eth_call`
+  against 677): approve (`0x095ea7b3`, spender = vault, 1.000000 USDT) **succeeds on mainnet**, and
+  deposit (`0xb6b55f25`, 1000000 raw units at 6dp) decodes correctly — the call reaches the token
+  transfer and fails only for lack of real funds, not on an argument guard.
+- The UI guards work: with a wallet holding 0 USDT the approve path refuses locally instead of sending a
+  doomed transaction.
+- Still true and worth stating in any submission: the mainnet vault has **0 deposits and 0 settlements**
+  — the 29 settlements in the table below are testnet 968. Real-users activity requires real depositors.
 
 ## 2026-10-14 llms.txt
 
@@ -45,13 +73,13 @@ Updated: 2026-10-14 (mainnet contract + public-site visual refresh live)
 
 Two of the six modules on BOT Chain's published Agent OS are built, deployed and settling. The work
 lives in `/root/botchain-mcp` (git, committed as `Nifemi0`, **not pushed** — see Blocked).
-The public front door is **https://agentpay-rail.netlify.app**.
+The public front door is **https://agentpay-rail.vercel.app** (the Netlify account is credit-blocked).
 
 ## Current state
 
 | | |
 |---|---|
-| Hosted front door | `https://agentpay-rail.netlify.app` (Netlify, static assets local + API proxied) |
+| Hosted front door | `https://agentpay-rail.vercel.app` (Vercel, static assets local + API proxied) |
 | Origin (holds the settlement key) | `https://agentpay.104-252-77-136.sslip.io` · pm2 process `agentpay` · nginx site `agentpay` |
 | Relocated locally at | `/root/agentpay-site` (built by `scripts/build-site.sh`) |
 | Settlements on chain | 29 · 0.069 USDT · vault holds 5.0 USDT |
@@ -143,8 +171,9 @@ Paid (402 → settle → serve): `/v1/chain/stats` · `/v1/address/:address` ·
 1. Push the repo (PAT above); optionally redeploy on Vercel.
 2. Deploy the vault to **mainnet 677** against real USDT (`scripts/deploy-mainnet.cjs --fire`, costs
    ~0.017 BOT from the ops float) and flip `DEPLOYMENT=677`.
-3. **Bring-your-own-wallet in the console** — browser wallet → approve → deposit → sign in-page. This is
-   the difference between a demo that spends our float and a product a stranger can pay with.
+3. ~~**Bring-your-own-wallet in the console**~~ — **done 2026-10-16**: the `/vault/` page connects a
+   BOT Chain wallet, approves USDT and deposits into the vault. Still open: let the *console* sign the
+   voucher in-page from that balance instead of using the server-side demo payer.
 4. Metered batching — accumulate vouchers, settle N per transaction.
 5. Remote MCP transport (streamable HTTP) so agents connect by URL instead of a local process.
 6. Module 03 (Agent Wallet) and the policy layer (per-call spend limits).

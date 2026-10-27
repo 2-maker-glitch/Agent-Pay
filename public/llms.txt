@@ -4,13 +4,14 @@
 
 ## Canonical links
 
-- Website: https://agentpay-rail.netlify.app/
-- LLM context: https://agentpay-rail.netlify.app/llms.txt
-- Payment rail: https://agentpay-rail.netlify.app/product/
-- Developer guide: https://agentpay-rail.netlify.app/developers/
-- BOT Chain integration: https://agentpay-rail.netlify.app/network/
-- Interactive console: https://agentpay-rail.netlify.app/console/
-- Service health: https://agentpay-rail.netlify.app/health
+- Website: https://agentpay-rail.vercel.app/
+- LLM context: https://agentpay-rail.vercel.app/llms.txt
+- Payment rail: https://agentpay-rail.vercel.app/product/
+- Developer guide: https://agentpay-rail.vercel.app/developers/
+- BOT Chain integration: https://agentpay-rail.vercel.app/network/
+- Interactive console: https://agentpay-rail.vercel.app/console/
+- Fund your agent (wallet connect + USDT deposit): https://agentpay-rail.vercel.app/vault/
+- Service health: https://agentpay-rail.vercel.app/health
 - X account: https://x.com/AgentPay_bot
 - BOT Chain launch post: https://x.com/AgentPay_bot/status/2110268057788481823
 
@@ -20,10 +21,10 @@
 - Chain ID: 677
 - RPC: https://rpc.botchain.ai
 - Explorer: https://scan.botchain.ai
-- AgentPayVault: 0xAd06420D3e247186195189ed0DF571Cdce9f038C
-- Contract explorer: https://scan.botchain.ai/address/0xAd06420D3e247186195189ed0DF571Cdce9f038C
+- AgentPayVault: 0x54A0Ef469f005d295b60E7c071106953AC5B621C
+- Contract explorer: https://scan.botchain.ai/address/0x54A0Ef469f005d295b60E7c071106953AC5B621C
 - Settlement token: USDT
-- USDT contract: 0xaBabc7Ddc03e501d190C676BF3d92ef0e6e87a3C
+- USDT contract: 0xe3Dc51CC0B4AF6EC01CA929e1be0092325aCAAf0
 - Token decimals: 6
 - Deployed: 2026-10-14
 
@@ -41,7 +42,7 @@ The settlement scheme is `batch-settlement`. It uses a prepaid vault because BOT
 
 - The AgentPayVault contract is deployed on BOT Chain mainnet, chain 677.
 - The public paid API and facilitator are online.
-- The browser console uses a funded testnet payer on chain 968 so visitors can demonstrate the complete payment flow without connecting a wallet or spending real USDT.
+- The browser console uses a funded payer wallet so visitors can run the complete payment flow without connecting their own wallet.
 - Data returned by the demonstration endpoints is read from BOT Chain mainnet.
 - The mainnet contract and testnet browser demonstration are deliberately identified separately.
 
@@ -77,7 +78,7 @@ AgentPay's BOT Chain MCP server exposes nine read tools over stdio:
 
 ## Official submission details
 
-1. Website: https://agentpay-rail.netlify.app/
-2. BOT Chain mainnet contract: 0xAd06420D3e247186195189ed0DF571Cdce9f038C
+1. Website: https://agentpay-rail.vercel.app/
+2. BOT Chain mainnet contract: 0x54A0Ef469f005d295b60E7c071106953AC5B621C
 3. X account: https://x.com/AgentPay_bot
 4. Post announcing the project on BOT Chain: https://x.com/AgentPay_bot/status/2110268057788481823
