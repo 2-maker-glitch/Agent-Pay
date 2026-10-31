@@ -4,10 +4,10 @@
   "rpc": "https://rpc.botchain.ai",
   "explorer": "https://scan.botchain.ai",
   "deployedAt": "2026-10-23T18:21:38.312Z",
-  "token": "0xe3Dc51CC0B4AF6EC01CA929e1be0092325aCAAf0",
-  "vault": "0x54A0Ef469f005d295b60E7c071106953AC5B621C",
+  "token": "0xaBabc7Ddc03e501d190C676BF3d92ef0e6e87a3C",
+  "vault": "0xAd06420D3e247186195189ed0DF571Cdce9f038C",
   "payee": "0x7b65fA9ae72EeF34d0092209070a81e9dCD49E5a",
-  "domainSeparator": "0x33353f8ca3b685382097578a3e21af7710a0995ce35af6e4b98658d5dad870ae",
+  "domainSeparator": "0xcc4532b1a43922de712400d62ebe11f2ba8f27db102430d8540b0b28d823944b",
   "abi": {
     "MockUSDT": [
       {

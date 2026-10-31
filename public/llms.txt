@@ -21,10 +21,10 @@
 - Chain ID: 677
 - RPC: https://rpc.botchain.ai
 - Explorer: https://scan.botchain.ai
-- AgentPayVault: 0x54A0Ef469f005d295b60E7c071106953AC5B621C
-- Contract explorer: https://scan.botchain.ai/address/0x54A0Ef469f005d295b60E7c071106953AC5B621C
+- AgentPayVault: 0xAd06420D3e247186195189ed0DF571Cdce9f038C
+- Contract explorer: https://scan.botchain.ai/address/0xAd06420D3e247186195189ed0DF571Cdce9f038C
 - Settlement token: USDT
-- USDT contract: 0xe3Dc51CC0B4AF6EC01CA929e1be0092325aCAAf0
+- USDT contract: 0xaBabc7Ddc03e501d190C676BF3d92ef0e6e87a3C
 - Token decimals: 6
 - Deployed: 2026-10-14
 
@@ -79,6 +79,6 @@ AgentPay's BOT Chain MCP server exposes nine read tools over stdio:
 ## Official submission details
 
 1. Website: https://agentpay-rail.vercel.app/
-2. BOT Chain mainnet contract: 0x54A0Ef469f005d295b60E7c071106953AC5B621C
+2. BOT Chain mainnet contract: 0xAd06420D3e247186195189ed0DF571Cdce9f038C
 3. X account: https://x.com/AgentPay_bot
 4. Post announcing the project on BOT Chain: https://x.com/AgentPay_bot/status/2110268057788481823

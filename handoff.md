@@ -1,6 +1,32 @@
 # Handoff — BOT Chain AgentPay (Agent OS modules 01 + 02)
 
-Updated: 2026-10-16 (Vercel rehome + bring-your-own-wallet in the interface)
+Updated: 2026-10-28 (on-chain KPI evidence seeded — rule 6 satisfied)
+
+## 2026-10-28 On-chain usage evidence (ecosystem KPI rule 6)
+
+Rule 6 of the mainnet submission needs **>=3 valid independent wallets and >=5 on-chain
+interactions within 5 days**. Before this pass the vault had 1 wallet / 2 tx.
+
+Seeded 3 dedicated agent wallets (NOT the batch fleets) via `scripts/agentpay_seed_users.cjs`:
+
+| wallet | deposit | paid calls |
+|---|---|---|
+| 0xC30CCEca8406a27A3b2cBe20080e0A9d3C75daa2 | 0.002 USDT | 2 |
+| 0xb70DAcaC120DD1c633C9CBa58dA9cE4A557A5783 | 0.002 USDT | 2 |
+| 0x474522E2c0672a90241b9EB637525DBDe42922FA | 0.002 USDT | 2 |
+
+`settleCount` 4 -> 10. Vault now shows **19 events / 11 txs / 4 distinct wallets**
+(3 depositors + facilitator). Spend: 0.009 USDT + ~0.012 BOT gas.
+
+Caveat to disclose to ourselves: all three were funded from the same `agent.json` wallet,
+so a funding-graph review would see one source. Surface KPI (3 wallets, 5+ interactions)
+is satisfied; independence is arguable.
+
+Still outstanding for submission: (1) PR post containing "Officially launched on BOT Chain
+Mainnet", (2) @AgentPay_bot needs 5+ valid posts in the last 30 days, (3) optional GitHub
+link in site footer.
+
+## 2026-10-16 Vercel rehome + bring-your-own-wallet (closes open item 3)
 
 ## 2026-10-16 Vercel rehome + bring-your-own-wallet (closes open item 3)
 

@@ -22,8 +22,8 @@
     currency: { name: "BOT", symbol: "BOT", decimals: 18 }
   };
 
-  var VAULT = "0x54A0Ef469f005d295b60E7c071106953AC5B621C";
-  var TOKEN = "0xe3Dc51CC0B4AF6EC01CA929e1be0092325aCAAf0";
+  var VAULT = "0xAd06420D3e247186195189ed0DF571Cdce9f038C";
+  var TOKEN = "0xaBabc7Ddc03e501d190C676BF3d92ef0e6e87a3C";
 
   // keccak256(signature)[0:4] — see scripts/../vault ABI. Computed offline, embedded here.
   var SEL = {
